@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/domain"
 )
 
 const procPollEvery = 500 * time.Millisecond

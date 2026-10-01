@@ -181,12 +181,18 @@ describe('ThreadView', () => {
   })
 
   it('sends a reply with the draft via ⌘↵', async () => {
-    const user = userEvent.setup()
-    const draft = addComment(emptyDraft, { threadId: 't_1', blockId: 'b_2', lines: { start: 14, end: 14 }, text: 'x' })
-    const { ctx } = renderStateful(<ThreadView threadId="t_1" />, { draft })
-    expect(screen.getByText('⌘↵ sends with 1 draft comment')).toBeInTheDocument()
-    await user.type(screen.getByRole('textbox', { name: 'Reply' }), 'Looks good{Meta>}{Enter}{/Meta}')
-    expect(ctx.sendReview).toHaveBeenCalledWith({ threadId: 't_1', message: 'Looks good' })
+    // The hint follows the host platform; pin macOS so the ⌘↵ assertion holds on every OS.
+    const platform = vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel')
+    try {
+      const user = userEvent.setup()
+      const draft = addComment(emptyDraft, { threadId: 't_1', blockId: 'b_2', lines: { start: 14, end: 14 }, text: 'x' })
+      const { ctx } = renderStateful(<ThreadView threadId="t_1" />, { draft })
+      expect(screen.getByText('⌘↵ sends with 1 draft comment')).toBeInTheDocument()
+      await user.type(screen.getByRole('textbox', { name: 'Reply' }), 'Looks good{Meta>}{Enter}{/Meta}')
+      expect(ctx.sendReview).toHaveBeenCalledWith({ threadId: 't_1', message: 'Looks good' })
+    } finally {
+      platform.mockRestore()
+    }
   })
 
   it('shows the accepted conclusion under the title and hides the composer when resolved (resolve feedback 1)', () => {

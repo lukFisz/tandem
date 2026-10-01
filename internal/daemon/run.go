@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/store"
+	"github.com/lukFisz/tandem/internal/store"
 )
 
 // Run serves the daemon until ctx is done, /api/shutdown is called, or it has been idle for cfg.IdleTimeout.

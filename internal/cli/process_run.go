@@ -16,8 +16,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/lukaszfiszer/tandem/internal/client"
-	"github.com/lukaszfiszer/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/client"
+	"github.com/lukFisz/tandem/internal/domain"
 )
 
 // selfExecutable is the binary `tdm process run` re-execs into; tests point it at the test binary.

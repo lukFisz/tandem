@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/domain"
 )
 
 // tailWindow bounds how much of an output file tailLines reads per call.

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/store"
+	"github.com/lukFisz/tandem/internal/store"
 )
 
 // runUntilDaemonInfo starts Run in the background and waits for it to write a daemon.json whose

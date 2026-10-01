@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/store"
+	"github.com/lukFisz/tandem/internal/store"
 )
 
 type Client struct {

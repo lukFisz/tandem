@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/domain"
 )
 
 // Final review finding 3: `tdm wait` defaults to a 9-minute timeout, but Claude Code's Bash tool

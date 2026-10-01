@@ -1,4 +1,4 @@
-module github.com/lukaszfiszer/tandem
+module github.com/lukFisz/tandem
 
 go 1.27
 

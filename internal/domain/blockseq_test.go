@@ -3,8 +3,8 @@ package domain_test
 import (
 	"testing"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
-	"github.com/lukaszfiszer/tandem/internal/domain/domaintest"
+	"github.com/lukFisz/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/domain/domaintest"
 )
 
 func TestBlocksRecordTheirSeq(t *testing.T) {

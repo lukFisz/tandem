@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/daemon"
-	"github.com/lukaszfiszer/tandem/internal/store"
+	"github.com/lukFisz/tandem/internal/daemon"
+	"github.com/lukFisz/tandem/internal/store"
 )
 
 // startDaemon runs an in-process daemon with version "test" and chdirs into an empty project dir.

@@ -16,9 +16,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/lukaszfiszer/tandem/internal/client"
-	"github.com/lukaszfiszer/tandem/internal/domain"
-	"github.com/lukaszfiszer/tandem/internal/store"
+	"github.com/lukFisz/tandem/internal/client"
+	"github.com/lukFisz/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/store"
 )
 
 type app struct {

@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/domain"
 )
 
 // logFile is the subset of *os.File that Log needs; tests substitute a fault-injecting fake.

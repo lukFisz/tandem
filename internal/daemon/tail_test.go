@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/domain"
 )
 
 func writeTemp(t *testing.T, content string) string {

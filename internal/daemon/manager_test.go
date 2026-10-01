@@ -5,8 +5,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
-	"github.com/lukaszfiszer/tandem/internal/store"
+	"github.com/lukFisz/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/store"
 )
 
 var testProject = store.Project{ID: "p1", RootPath: "/tmp/p1", Name: "p1"}

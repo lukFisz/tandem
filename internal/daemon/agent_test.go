@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/store"
+	"github.com/lukFisz/tandem/internal/store"
 )
 
 var agentT0 = time.Date(2026, 9, 25, 10, 0, 0, 0, time.UTC)

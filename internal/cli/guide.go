@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/lukaszfiszer/tandem/internal/guide"
+	"github.com/lukFisz/tandem/internal/guide"
 )
 
 func (a *app) guideCmd() *cobra.Command {

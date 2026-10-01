@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/lukaszfiszer/tandem/internal/domain"
-	"github.com/lukaszfiszer/tandem/internal/domain/domaintest"
+	. "github.com/lukFisz/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/domain/domaintest"
 )
 
 var (

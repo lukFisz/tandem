@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/store"
+	"github.com/lukFisz/tandem/internal/store"
 )
 
 type testEnv struct {

@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
-	"github.com/lukaszfiszer/tandem/internal/editor"
+	"github.com/lukFisz/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/editor"
 )
 
 //go:embed webdist

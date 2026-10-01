@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
-	"github.com/lukaszfiszer/tandem/internal/store"
+	"github.com/lukFisz/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/store"
 )
 
 type Manager struct {

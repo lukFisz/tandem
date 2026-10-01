@@ -6,10 +6,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
-	"github.com/lukaszfiszer/tandem/internal/editor"
-	"github.com/lukaszfiszer/tandem/internal/render"
-	"github.com/lukaszfiszer/tandem/internal/store"
+	"github.com/lukFisz/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/editor"
+	"github.com/lukFisz/tandem/internal/render"
+	"github.com/lukFisz/tandem/internal/store"
 )
 
 const maxBody = 8 << 20

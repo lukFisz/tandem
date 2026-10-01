@@ -48,10 +48,7 @@ npm run e2e       # build, then Playwright against a real tdm binary
 drives. The specs (`web/e2e/*.spec.ts`) run against Desktop Chrome, with `TANDEM_NO_BROWSER=1` and a
 temporary `TANDEM_HOME`.
 
-> [!NOTE]
-> Three Vitest tests (in `src/thread/Composer.test.tsx` and `src/thread/ThreadView.test.tsx`) expect the
-> macOS `⌘↵` label. Off macOS, jsdom reports the host OS and the label renders as `Ctrl↵`, so those tests fail
-> on Linux.
+Tests that assert the `⌘↵` shortcut label pin `navigator.platform` to macOS, so the suite passes on any OS.
 
 ### Snapshot contract fixture
 

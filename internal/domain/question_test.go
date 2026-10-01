@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	. "github.com/lukaszfiszer/tandem/internal/domain"
-	"github.com/lukaszfiszer/tandem/internal/domain/domaintest"
+	. "github.com/lukFisz/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/domain/domaintest"
 )
 
 var ask = &Ask{Text: "Must old logs stay readable?", Options: []string{"Yes", "No"}}

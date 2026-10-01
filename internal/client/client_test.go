@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/store"
+	"github.com/lukFisz/tandem/internal/store"
 )
 
 func fakeDaemon(t *testing.T, version string, onShutdown func()) (*httptest.Server, store.DaemonInfo) {

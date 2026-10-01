@@ -12,9 +12,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/lukaszfiszer/tandem/internal/client"
-	"github.com/lukaszfiszer/tandem/internal/daemon"
-	"github.com/lukaszfiszer/tandem/internal/store"
+	"github.com/lukFisz/tandem/internal/client"
+	"github.com/lukFisz/tandem/internal/daemon"
+	"github.com/lukFisz/tandem/internal/store"
 )
 
 func (a *app) waitCmd() *cobra.Command {

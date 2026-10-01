@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lukaszfiszer/tandem/internal/editor"
-	"github.com/lukaszfiszer/tandem/internal/store"
+	"github.com/lukFisz/tandem/internal/editor"
+	"github.com/lukFisz/tandem/internal/store"
 )
 
 func fakeProbe(installed ...string) func() editor.Probe {

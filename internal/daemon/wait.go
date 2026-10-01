@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
-	"github.com/lukaszfiszer/tandem/internal/render"
+	"github.com/lukFisz/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/render"
 )
 
 var ErrWaitSuperseded = errors.New("wait superseded")

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderStateful } from '../test/session'
@@ -21,7 +21,13 @@ const thread: Thread = {
 }
 
 describe('Composer', () => {
-  it('shows the jsdom-detected mod-key hint when there is no draft', () => {
+  // The hint follows the host platform; pin macOS so the ⌘↵ assertions hold on every OS.
+  beforeEach(() => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel')
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  it('shows the macOS mod-key hint when there is no draft', () => {
     renderStateful(<Composer thread={thread} />)
     expect(screen.getByText('⌘↵ to send')).toBeInTheDocument()
   })

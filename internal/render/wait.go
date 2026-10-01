@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/domain"
 )
 
 type section struct{ stageID, text string }

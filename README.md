@@ -3,6 +3,7 @@
 <p align="center"><b>Review large AI output with your agent, thread by thread, in your browser.</b></p>
 
 <p align="center">
+  <a href="https://github.com/lukFisz/tandem/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/lukFisz/tandem/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/lukFisz/tandem/blob/main/go.mod"><img alt="Go version from go.mod" src="https://img.shields.io/github/go-mod/go-version/lukFisz/tandem"></a>
   <a href="#installation"><img alt="Platforms: macOS and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey"></a>
 </p>
@@ -173,7 +174,13 @@ PREFIX="$HOME/.local/bin" ./install.sh
 
 Re-running it is safe. The binary is only replaced when the build output changes, and the script warns you if `PREFIX` is not on your `PATH`.
 
-**With `go build`.** The web UI's build output is committed, so you don't need Node:
+**With `go install`.** The web UI's build output is committed, so you don't need Node:
+
+```bash
+go install github.com/lukFisz/tandem/cmd/tdm@latest   # installs to $(go env GOPATH)/bin
+```
+
+**With `go build`**, from a clone:
 
 ```bash
 go build -o ~/bin/tdm ./cmd/tdm   # ~/bin must be on your PATH
@@ -181,8 +188,8 @@ go build -o ~/bin/tdm ./cmd/tdm   # ~/bin must be on your PATH
 
 Local builds report a version like `dev-19e9513b16a8`. To stamp one, use `go build -ldflags "-X main.version=v0.1.0" ./cmd/tdm`.
 
-**Uninstall.** Stop the daemon, then remove the binary, your sessions and the skill (drop `sudo` if you installed
-with a writable `PREFIX`; adjust the paths if you set `TANDEM_HOME` or `--dir`):
+**Uninstall.** Stop the daemon, then remove the binary, your sessions and the skill (drop `sudo` if `tdm` is in a
+directory you own, as with `go install` or a writable `PREFIX`; adjust the paths if you set `TANDEM_HOME` or `--dir`):
 
 ```bash
 tdm daemon stop
@@ -309,15 +316,14 @@ The web UI needs Node 22.12+, 24 or 26+ (Vitest 5 does not support Node 23 or 25
 ## Project status
 
 Tandem is an early, single-user tool heading for its first open-source release. There
-are no releases, tags or prebuilt binaries yet, and no CI. `go install` does not work yet because the module path
-(`github.com/lukaszfiszer/tandem`) doesn't match the repository URL. Only Claude Code has been tested as the driving agent.
+are no releases, tags or prebuilt binaries yet. Only Claude Code has been tested as the driving agent.
 
 ## Contributing
 
 Please open an issue in [the issue tracker](https://github.com/lukFisz/tandem/issues) to discuss a change before
 sending a larger pull request.
 Before opening a PR, run `go test ./...` and, for UI changes, `npm test` and `npm run build` in `web/`.
-On Linux, three Vitest tests fail because of a macOS-only shortcut label; see [DEVELOPMENT.md](DEVELOPMENT.md).
+CI runs the same checks on every pull request.
 
 ## License
 

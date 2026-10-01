@@ -3,7 +3,7 @@ package daemon
 import (
 	"fmt"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/domain"
 )
 
 // StoreContent moves the transport-only Content of an AddBlock (and its variant blocks) into blobs.

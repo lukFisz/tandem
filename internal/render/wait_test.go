@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
-	"github.com/lukaszfiszer/tandem/internal/domain/domaintest"
+	"github.com/lukFisz/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/domain/domaintest"
 )
 
 const repoKt = "class Repo(\n    val db: Db,\n    val cache: Map<String, User>? = null\n)\n"

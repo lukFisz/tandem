@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lukaszfiszer/tandem/internal/domain"
+	"github.com/lukFisz/tandem/internal/domain"
 )
 
 // Build runs commands through Decide and Apply with sequential seqs, failing the test on any error.

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lukaszfiszer/tandem/internal/guide"
+	"github.com/lukFisz/tandem/internal/guide"
 )
 
 func TestTipRotation(t *testing.T) {
