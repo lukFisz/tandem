@@ -337,6 +337,34 @@ describe('SessionPage', () => {
     }
   })
 
+  // A block chip opens the block's thread and scrolls to the block, or to its collapsed row when superseded.
+  it('opens the thread of a block chip and scrolls to the block', async () => {
+    const scrolled: Element[] = []
+    Element.prototype.scrollIntoView = function (this: Element) {
+      scrolled.push(this)
+    }
+    try {
+      const snap = structuredClone(fixture)
+      snap.state.threads.t_1.messages[0].text = 'Compare b_6 and the old b_5.'
+      window.location.hash = '#t_1'
+      render(<SessionPage sid="s_fixture" />)
+      act(() => FakeEventSource.instances.at(-1)!.emit('state', JSON.stringify(snap)))
+      // b_5 and b_6 are both Go code, so both chips read "code (go)"; the title attribute tells them apart.
+      const chip = screen.getAllByRole('link', { name: 'code (go)' }).find((a) => a.getAttribute('title') === 'id: b_6')!
+      await userEvent.click(chip)
+      await waitFor(() => expect(window.location.hash).toBe('#t_3'))
+      await waitFor(() => expect(scrolled).toContain(document.getElementById('b_6')))
+
+      act(() => {
+        window.location.hash = '#b_5'
+        window.dispatchEvent(new HashChangeEvent('hashchange'))
+      })
+      await waitFor(() => expect(scrolled).toContain(document.querySelector('[data-superseded="b_5"]')))
+    } finally {
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView
+    }
+  })
+
   // Question message spec: a question chip opens the question's thread and scrolls to the question.
   it('opens the thread of a question chip and scrolls to the question (question message spec)', async () => {
     const scrolled: Element[] = []

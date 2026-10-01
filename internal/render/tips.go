@@ -4,7 +4,7 @@ package render
 const TipEvery = 5
 
 var tips = []string{
-	"Refer to things by id (st_1, t_3, o_2, q_1, p_1) in notes and messages; the page turns them into clickable chips. Block ids (b_7) stay plain text.",
+	"Refer to things by id (st_1, t_3, b_7, o_2, q_1, p_1) in notes and messages; the page turns them into clickable chips.",
 	"Need a quick decision? `tdm ask \"<question>\" --option A --option B` beats a long note. Keep one open question per thread and `tdm ask --withdraw q_N` when it becomes moot.",
 	"`tdm annotate b_N --lines a-b \"<why>\"` on every non-obvious line. Post a corrected block with `--supersedes b_M` instead of adding a second copy.",
 	"Tests or builds? `tdm process run --out <path> -- <cmd>` runs them in the background as a card, then `tdm wait`. Never block the session on a foreground command.",

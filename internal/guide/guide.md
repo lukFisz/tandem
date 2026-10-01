@@ -11,8 +11,8 @@ human reads, comments on lines, picks variants and accepts conclusions. You bloc
 - **Block**: content inside a thread: note, code, file, markdown or variants. Ids are short: `st_1`, `t_3`,
   `b_7`, `o_2`, `q_1` for a question, and `p_1` for a process card.
 
-Mention threads, stages, variant options, questions and processes by id (`t_3`, `st_1`, `o_2`, `q_1`, `p_1`) in notes, messages,
-conclusions and summaries. The page shows each one as a chip with its title and opens it on click, so short ids
+Mention threads, stages, blocks, variant options, questions and processes by id (`t_3`, `st_1`, `b_7`, `o_2`, `q_1`, `p_1`) in notes,
+messages, conclusions and summaries. The page shows each one as a chip with its title and opens it on click, so short ids
 are all you need to write.
 
 ## The loop

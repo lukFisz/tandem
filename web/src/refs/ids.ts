@@ -1,6 +1,6 @@
-import type { Message, State } from '../api/types'
+import type { Block, Message, State } from '../api/types'
 
-// Demo2 follow-up 4: the agent refers to threads and stages by short id (t_3, st_1); the page shows
+// Demo2 follow-up 4: the agent refers to threads, stages and blocks by short id (t_3, st_1, b_7); the page shows
 // each known id as a chip with the item's title. The question message spec (part A) adds variant
 // options (o_2). splitIds is the one tokenizer for that: it cuts text into plain runs and known
 // ids. An id is a whole word (st_1x, xt_1 and t_1_2 are not ids), ids inside `code spans` stay
@@ -9,11 +9,11 @@ export type IdSegment = { kind: 'text'; text: string } | { kind: 'ref'; id: stri
 
 export type TitleOf = (id: string) => string | undefined
 
-// A code span or a URL (matched first, so ids inside them are skipped), or a thread/stage/option id.
+// A code span or a URL (matched first, so ids inside them are skipped), or a thread/stage/block/option id.
 // An id is a whole word that is not part of a path, file name or hyphenated word: no word char,
 // '/', '.' or '-' right before it, and no word char or a '.', '/', '-' plus a word char right
 // after it. Sentence punctuation still works: "see t_1." and "(t_1)" match.
-const CODE_OR_ID = /(`+)[\s\S]*?\1|([a-zA-Z][\w+.-]*:\/\/\S+)|(?<![\w/.-])(?:st|t|o|q|p)_\d+(?![\w]|[./-]\w)/g
+const CODE_OR_ID = /(`+)[\s\S]*?\1|([a-zA-Z][\w+.-]*:\/\/\S+)|(?<![\w/.-])(?:st|t|b|o|q|p)_\d+(?![\w]|[./-]\w)/g
 
 export function splitIds(text: string, titleOf: TitleOf): IdSegment[] {
   const out: IdSegment[] = []
@@ -42,7 +42,30 @@ export function questionTitle(text: string): string {
   return text.trim().split('\n', 1)[0]
 }
 
-// idTitles lists every id a chip can show with its title: stages, threads, variant options,
+// blockTitle names a block in its b_N chip by what it shows: a file or a document read from a file by
+// path:lines (the file name alone when the path is long), a note or a document from stdin by its first line,
+// code by its language (else its first line), variants by their title. CSS truncates it, as for questions.
+export function blockTitle(b: Block): string {
+  const firstLine = (text?: string) => (text ?? '').trim().split('\n', 1)[0].trim()
+  switch (b.type) {
+    case 'file':
+    case 'markdown': {
+      if (!b.path) return firstLine(b.text) || 'Document'
+      const name = b.path.length > 32 ? (b.path.split('/').pop() ?? b.path) : b.path
+      if (!b.lineCount) return name
+      const first = b.firstLine ?? 1
+      return `${name}:${first}-${first + b.lineCount - 1}`
+    }
+    case 'code':
+      return b.lang ? `code (${b.lang})` : firstLine(b.text) || 'code'
+    case 'variants':
+      return b.variants?.title || 'Variants'
+    default:
+      return firstLine(b.text) || 'Note'
+  }
+}
+
+// idTitles lists every id a chip can show with its title: stages, threads, blocks, variant options,
 // questions in threads and on stage pages (by the question's first line; CSS truncates it) and
 // their options.
 // useTitleOf keys its memo on this list, so it must stay cheap and deterministic.
@@ -61,7 +84,10 @@ export function idTitles(state: State): [string, string][] {
   }
   // Questions on stage pages too (demo 7 follow-ups 6).
   for (const s of state.stages) questions(s.messages ?? [])
-  for (const b of Object.values(state.blocks)) for (const o of b.variants?.options ?? []) pairs.push([o.id, o.title])
+  for (const b of Object.values(state.blocks)) {
+    pairs.push([b.id, blockTitle(b)])
+    for (const o of b.variants?.options ?? []) pairs.push([o.id, o.title])
+  }
   for (const p of Object.values(state.processes ?? {})) pairs.push([p.id, p.cmd])
   return pairs
 }

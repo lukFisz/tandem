@@ -21,9 +21,9 @@ function titleKey(state: State): string {
   return JSON.stringify(idTitles(state))
 }
 
-// IdChip shows a thread, stage or option by its title (demo2 follow-up 4, question message spec).
+// IdChip shows a thread, stage, block or option by its title (demo2 follow-up 4, question message spec).
 // It is a plain link to #<id>, so a click opens the item through the page's hash routing
-// (useCurrentItem, which maps an option to its thread and scrolls to it). The title attribute
+// (useCurrentItem, which maps a block or option to its thread and scrolls to it). The title attribute
 // shows the id on hover. Its HTML twin for markdown is idChipHtml (markdown/markdown.ts); keep
 // the two in sync.
 export function IdChip({ id, title }: { id: string; title: string }) {

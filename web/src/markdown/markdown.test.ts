@@ -156,4 +156,10 @@ describe('id chips in markdown (demo2 follow-up 4)', () => {
     const html = md.render('Chose o_1.', { titleOf: (id: string) => (id === 'o_1' ? 'Empty map' : undefined) })
     expect(html).toContain('<a class="id-chip" href="#o_1" title="id: o_1">Empty map</a>')
   })
+
+  it('renders block ids as chips', () => {
+    const html = md.render('See b_7 and b_9.', { titleOf: (id: string) => (id === 'b_7' ? 'wait.go:18-80' : undefined) })
+    expect(html).toContain('<a class="id-chip" href="#b_7" title="id: b_7">wait.go:18-80</a>')
+    expect(html).toContain('and b_9.')
+  })
 })

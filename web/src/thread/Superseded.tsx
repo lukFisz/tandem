@@ -21,7 +21,7 @@ export function Superseded({ block }: { block: Block }) {
   }
 
   return (
-    <details className="superseded">
+    <details className="superseded" data-superseded={block.id}>
       <summary>
         {blockLabel(block)} superseded by{' '}
         <button type="button" className="btn link superseded-link" onClick={jump}>

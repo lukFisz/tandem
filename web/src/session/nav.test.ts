@@ -105,6 +105,14 @@ describe('nav', () => {
     expect(anchorOf(state, '')).toBeUndefined()
   })
 
+  it('maps a block id to its thread and element, a superseded one to its collapsed row', () => {
+    const { state } = fixtureSnapshot()
+    expect(anchorOf(state, 'b_2')).toEqual({ itemId: 't_1', selector: '[id="b_2"]' })
+    expect(anchorOf(state, 'b_6')).toEqual({ itemId: 't_3', selector: '[id="b_6"]' })
+    expect(anchorOf(state, 'b_5')).toEqual({ itemId: 't_3', selector: '[data-superseded="b_5"]' })
+    expect(anchorOf(state, 'b_99')).toBeUndefined()
+  })
+
   it('maps a process id to its thread and card', () => {
     const { state } = fixtureSnapshot()
     const withProc = {

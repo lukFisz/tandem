@@ -17,12 +17,18 @@ export interface ItemAnchor {
 }
 
 // anchorOf maps an id that lives inside a thread or a stage page to that item and its element: a
-// variant option (o_N) to its card, and a question (q_N) or one of its options to the question
+// block (b_N) to its element (a superseded block to its collapsed row, since the block inside is
+// hidden), a variant option (o_N) to its card, and a question (q_N) or one of its options to the question
 // bubble (question message spec), in a thread or on a stage page (demo 7 follow-ups 6), and a
 // process (p_N) to its card in the process's thread. Other ids, and ids the session does not
 // know, have no anchor.
 export function anchorOf(state: State, id: string): ItemAnchor | undefined {
-  if (!/^[oqp]_\d+$/.test(id)) return undefined
+  if (!/^[boqp]_\d+$/.test(id)) return undefined
+  if (id.startsWith('b_')) {
+    const b = state.blocks[id]
+    if (!b || !(b.threadId in state.threads)) return undefined
+    return { itemId: b.threadId, selector: b.supersededBy ? `[data-superseded="${id}"]` : `[id="${id}"]` }
+  }
   if (id.startsWith('p_')) {
     const proc = state.processes?.[id]
     return proc && proc.threadId in state.threads ? { itemId: proc.threadId, selector: `[id="${id}"]` } : undefined
