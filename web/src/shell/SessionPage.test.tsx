@@ -349,8 +349,7 @@ describe('SessionPage', () => {
       window.location.hash = '#t_1'
       render(<SessionPage sid="s_fixture" />)
       act(() => FakeEventSource.instances.at(-1)!.emit('state', JSON.stringify(snap)))
-      // b_5 and b_6 are both Go code, so both chips read "code (go)"; the title attribute tells them apart.
-      const chip = screen.getAllByRole('link', { name: 'code (go)' }).find((a) => a.getAttribute('title') === 'id: b_6')!
+      const chip = screen.getByRole('link', { name: 'code 6 (go)' })
       await userEvent.click(chip)
       await waitFor(() => expect(window.location.hash).toBe('#t_3'))
       await waitFor(() => expect(scrolled).toContain(document.getElementById('b_6')))

@@ -148,7 +148,7 @@ describe('titlesOf', () => {
     expect(f('b_2')).toBe('Repo.kt:12-15')
     expect(f('b_3')).toBe('Pick an approach for the cache')
     expect(f('b_4')).toBe('# Storage')
-    expect(f('b_5')).toBe('code (go)')
+    expect(f('b_5')).toBe('code 5 (go)')
   })
 
   it('titles blocks per kind and source', () => {
@@ -160,8 +160,8 @@ describe('titlesOf', () => {
     expect(blockTitle(block({ type: 'markdown', path: 'docs/plan.md', firstLine: 1, lineCount: 6 }))).toBe('plan.md:1-6')
     expect(blockTitle(block({ type: 'markdown', text: '\n# Plan\n\nbody' }))).toBe('# Plan')
     expect(blockTitle(block({ type: 'note', text: 'First line\nsecond' }))).toBe('First line')
-    expect(blockTitle(block({ type: 'code', lang: 'go', text: 'x := 1' }))).toBe('code (go)')
-    expect(blockTitle(block({ type: 'code', text: '\nSELECT 1;\nmore' }))).toBe('SELECT 1;')
+    expect(blockTitle(block({ type: 'code', lang: 'go', text: 'x := 1' }))).toBe('code 1 (go)')
+    expect(blockTitle(block({ type: 'code', text: '\nSELECT 1;\nmore' }))).toBe('code 1')
     expect(blockTitle(block({ type: 'variants', variants: { title: 'Cache', options: [] } }))).toBe('Cache')
     expect(blockTitle(block({ type: 'variants', variants: { options: [] } }))).toBe('Variants')
   })

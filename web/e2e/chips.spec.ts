@@ -50,11 +50,12 @@ test.afterAll(() => {
 
 test.use({ viewport: { width: 1280, height: 795 } })
 
-test('chip text: file name only, code language; backticked and unknown ids stay text', async ({ page }) => {
+test('chip text: file name only, code number and language; backticked and unknown ids stay text', async ({ page }) => {
   await page.goto(`${url}#t_2`)
   const refs = page.locator('main')
   await expect(refs.getByRole('link', { name: 'wait.go:18-46' })).toBeVisible()
-  await expect(refs.getByRole('link', { name: 'code (go)' })).toHaveCount(2)
+  await expect(refs.getByRole('link', { name: 'code 3 (go)' })).toBeVisible()
+  await expect(refs.getByRole('link', { name: 'code 4 (go)' })).toBeVisible()
   await expect(refs.locator('a.id-chip')).toHaveCount(3)
   await expect(refs.locator('code', { hasText: 'b_1' })).toBeVisible()
   await expect(refs.locator('a[href="#b_1"]')).toHaveCount(0)

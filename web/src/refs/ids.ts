@@ -44,7 +44,7 @@ export function questionTitle(text: string): string {
 
 // blockTitle names a block in its b_N chip by what it shows: a file or a document read from a file by
 // name:lines (the file name without its directory), a note or a document from stdin by its first line,
-// code by its language (else its first line), variants by their title. CSS truncates it, as for questions.
+// code by its number and language (`code 4 (go)`, so code blocks tell apart), variants by their title. CSS truncates it, as for questions.
 export function blockTitle(b: Block): string {
   const firstLine = (text?: string) => (text ?? '').trim().split('\n', 1)[0].trim()
   switch (b.type) {
@@ -57,7 +57,7 @@ export function blockTitle(b: Block): string {
       return `${name}:${first}-${first + b.lineCount - 1}`
     }
     case 'code':
-      return b.lang ? `code (${b.lang})` : firstLine(b.text) || 'code'
+      return `code ${b.id.slice(2)}` + (b.lang ? ` (${b.lang})` : '')
     case 'variants':
       return b.variants?.title || 'Variants'
     default:
