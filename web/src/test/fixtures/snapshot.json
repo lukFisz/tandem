@@ -1,0 +1,304 @@
+{
+  "state": {
+    "session": {
+      "id": "s_fixture",
+      "title": "Implement idea ABC",
+      "projectId": "p_fixture",
+      "status": "active"
+    },
+    "stages": [
+      {
+        "id": "st_1",
+        "title": "Data model",
+        "goal": "Pick the storage layer",
+        "status": "open",
+        "threadIds": [
+          "t_1",
+          "t_2",
+          "t_3"
+        ],
+        "lastAiSeq": 10
+      },
+      {
+        "id": "st_2",
+        "title": "API",
+        "status": "open",
+        "threadIds": null,
+        "messages": [
+          {
+            "actor": "ai",
+            "text": "Next we pick the API style.",
+            "seq": 23
+          },
+          {
+            "actor": "user",
+            "text": "REST, please.",
+            "seq": 24
+          }
+        ],
+        "lastUserSeq": 24,
+        "lastAiSeq": 23
+      }
+    ],
+    "threads": {
+      "t_1": {
+        "id": "t_1",
+        "stageId": "st_1",
+        "title": "Repository layer",
+        "status": "open",
+        "blockIds": [
+          "b_1",
+          "b_2"
+        ],
+        "messages": [
+          {
+            "actor": "ai",
+            "text": "Here is the repository layer.",
+            "seq": 7
+          },
+          {
+            "actor": "user",
+            "text": "Overall fine.",
+            "seq": 15
+          }
+        ],
+        "comments": [
+          {
+            "blockId": "b_2",
+            "lines": {
+              "start": 14,
+              "end": 14
+            },
+            "text": "Why not an empty map?",
+            "seq": 15
+          },
+          {
+            "blockId": "b_2",
+            "lines": {
+              "start": 13,
+              "end": 13
+            },
+            "quote": "db: Db",
+            "text": "Which Db?",
+            "seq": 15
+          }
+        ],
+        "messageComments": [
+          {
+            "messageSeq": 7,
+            "quote": "repository layer",
+            "text": "Which one?",
+            "seq": 15
+          }
+        ],
+        "lastUserSeq": 15,
+        "lastAiSeq": 7
+      },
+      "t_2": {
+        "id": "t_2",
+        "stageId": "st_1",
+        "title": "Cache strategy",
+        "status": "conclusion_proposed",
+        "blockIds": [
+          "b_3"
+        ],
+        "messages": [
+          {
+            "actor": "user",
+            "text": "Simpler.",
+            "seq": 16,
+            "choice": {
+              "blockId": "b_3",
+              "optionId": "o_2"
+            }
+          },
+          {
+            "actor": "ai",
+            "text": "Cache user lookups too?\nOnly the hot paths.",
+            "seq": 20,
+            "question": {
+              "id": "q_2",
+              "options": [
+                {
+                  "id": "o_5",
+                  "title": "Yes"
+                },
+                {
+                  "id": "o_6",
+                  "title": "No"
+                }
+              ],
+              "answer": {
+                "optionId": "o_5"
+              }
+            }
+          },
+          {
+            "actor": "user",
+            "text": "Answered: Yes",
+            "seq": 21,
+            "answerTo": "q_2"
+          },
+          {
+            "actor": "ai",
+            "text": "Noted: user lookups are cached too.",
+            "seq": 22
+          }
+        ],
+        "comments": null,
+        "proposedConclusion": "Use a lazy delegate for the cache.",
+        "lastUserSeq": 21,
+        "lastAiSeq": 22,
+        "proposalVersion": 1,
+        "proposals": [
+          {
+            "text": "Use a lazy delegate for the cache.",
+            "seq": 17
+          }
+        ]
+      },
+      "t_3": {
+        "id": "t_3",
+        "stageId": "st_1",
+        "title": "Docs",
+        "status": "open",
+        "blockIds": [
+          "b_4",
+          "b_5",
+          "b_6"
+        ],
+        "messages": [
+          {
+            "actor": "ai",
+            "text": "Should the docs cover the blob layout?",
+            "seq": 18,
+            "question": {
+              "id": "q_1",
+              "options": [
+                {
+                  "id": "o_3",
+                  "title": "Yes"
+                },
+                {
+                  "id": "o_4",
+                  "title": "No"
+                }
+              ],
+              "withdrawn": true
+            }
+          }
+        ],
+        "comments": null,
+        "lastUserSeq": 0,
+        "lastAiSeq": 19
+      }
+    },
+    "blocks": {
+      "b_1": {
+        "id": "b_1",
+        "threadId": "t_1",
+        "seq": 4,
+        "type": "note",
+        "text": "The repository isolates storage from the domain, so the **event log** format can change freely.",
+        "firstLine": 1,
+        "lineCount": 1
+      },
+      "b_2": {
+        "id": "b_2",
+        "threadId": "t_1",
+        "seq": 5,
+        "type": "file",
+        "lang": "kotlin",
+        "path": "src/Repo.kt",
+        "blobSha": "cc0adafe434439365ade6dec78590d401199cd7d1e23e0e13a694dbd1e7b9e97",
+        "firstLine": 12,
+        "lineCount": 4,
+        "annotations": [
+          {
+            "lines": {
+              "start": 14,
+              "end": 14
+            },
+            "text": "Nullable because the cache is built lazily."
+          }
+        ]
+      },
+      "b_3": {
+        "id": "b_3",
+        "threadId": "t_2",
+        "seq": 9,
+        "type": "variants",
+        "variants": {
+          "title": "Pick an approach for the cache",
+          "options": [
+            {
+              "id": "o_1",
+              "title": "Empty map",
+              "pros": [
+                "No null checks"
+              ],
+              "cons": [
+                "Eager allocation"
+              ],
+              "blocks": [
+                {
+                  "type": "code",
+                  "lang": "kotlin",
+                  "text": "val cache = mutableMapOf\u003cString, User\u003e()\n",
+                  "firstLine": 1,
+                  "lineCount": 1
+                }
+              ]
+            },
+            {
+              "id": "o_2",
+              "title": "Lazy delegate",
+              "description": "Build the map on first use.",
+              "pros": [
+                "Built on demand",
+                "Non-null type"
+              ]
+            }
+          ]
+        },
+        "chosenOption": "o_2"
+      },
+      "b_4": {
+        "id": "b_4",
+        "threadId": "t_3",
+        "seq": 11,
+        "type": "markdown",
+        "lang": "markdown",
+        "text": "# Storage\n\nWe keep an event log.\n\n- JSONL\n- blobs\n",
+        "firstLine": 1,
+        "lineCount": 6
+      },
+      "b_5": {
+        "id": "b_5",
+        "threadId": "t_3",
+        "seq": 12,
+        "type": "code",
+        "lang": "go",
+        "text": "x := 1\n",
+        "firstLine": 1,
+        "lineCount": 1,
+        "supersededBy": "b_6"
+      },
+      "b_6": {
+        "id": "b_6",
+        "threadId": "t_3",
+        "seq": 13,
+        "type": "code",
+        "lang": "go",
+        "text": "x := 2\n",
+        "firstLine": 1,
+        "lineCount": 1
+      }
+    },
+    "lastSeq": 24,
+    "lastAiSeq": 23,
+    "delivered": 0,
+    "endRequested": false
+  },
+  "waiting": false
+}

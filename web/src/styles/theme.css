@@ -1,0 +1,234 @@
+/* Design tokens for the "editorial + IDE code" hybrid. Code panels stay dark in both themes. */
+:root {
+  --bg: #fbfaf7;
+  --fg: #2b2a27;
+  --muted: #78716c;
+  --faint: #a8a29e;
+  --line: #e7e3da;
+  --nav-bg: #f5f2eb;
+  --nav-active: #ece6da;
+  --accent: #b7791f;
+  --accent-fg: #ffffff;
+  --ok: #3f7d3a;
+  --ok-bg: #ecf3e8;
+  --danger: #b4432f;
+  /* T12: foreground for text on --danger (the error toast). #b4432f is dark enough for white
+     text at ≥4.5:1 here; the dark-theme override below uses a dark foreground instead, since
+     dark mode's lighter --danger (#e07a64) would fail contrast with white (2.9:1). */
+  --danger-fg: #ffffff;
+  --user-bg: #f1ede4;
+  --working: #7d8aa0;
+  /* Top-bar status dots: --live is a livelier green than --ok (a text/badge green); --danger-dot
+     is the vivid red of the not-connected heartbeat. */
+  --live: #2f9a4a;
+  --danger-dot: #d03a24;
+
+  --code-bg: #1e1f22;
+  --code-head: #2b2d30;
+  --code-fg: #bcbec4;
+  --code-ln: #5a5d63;
+  --code-sel: #2e436e;
+  --ann-bg: #2a2a24;
+  --ann-fg: #e6dcc3;
+  --draft-bg: #1f3326;
+  --draft-fg: #cfe8d3;
+  --draft-bar: #5fb865;
+  --sent-bar: #8c8f96;
+  /* Changes vs git HEAD in file excerpts and the diff modal. They sit on the code panel, which is
+     dark in both themes, so they are not redefined for dark. */
+  --diff-add: #5fb865;
+  --diff-mod: #6b8fd6;
+  --diff-del: #e07a64;
+  --diff-add-bg: rgb(95 184 101 / 0.1);
+  --diff-mod-bg: rgb(107 143 214 / 0.1);
+  --diff-del-bg: rgb(224 122 100 / 0.12);
+  --diff-add-bg-strong: rgb(95 184 101 / 0.22);
+  --diff-del-bg-strong: rgb(224 122 100 / 0.24);
+  --chip-bg: #e4eaf4;
+  --chip-fg: #30486b;
+
+  /* Polish: an accent tint for surfaces, the focus ring, the soft card shadow and the motion
+     tokens every transition and entrance uses. */
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  /* 90% on the light paper keeps the ring at 3:1 (55% was 1.9:1); the dark theme's brighter
+     accent reaches 3.2:1 at 55%. */
+  --ring: color-mix(in srgb, var(--accent) 90%, transparent);
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 20px rgb(0 0 0 / 0.06);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-1: 140ms;
+  --dur-2: 220ms;
+
+  --font-prose: "Charter", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --prose-width: 37.5rem; /* 600px at the 16px base */
+  /* The middle section's own width (the thread timeline / stage view): stays at the 61.25rem
+     floor on any window ≤1280px wide (70vw of 1280px is well under it) and grows with the
+     window from there, capped at 110rem so a line of code panels never runs away on a huge
+     display (user report: "it covers less than 50% of the screen" on a wide window). */
+  --col-width: clamp(61.25rem, 70vw, 110rem);
+
+  color-scheme: light dark;
+}
+
+/* Type (in rem) and the measures tied to it scale with this root size, so ≤1280px stays
+   pixel-identical to the approved mockup (16px base) while wider screens grow proportionally
+   instead of leaving small text in a big window. */
+html {
+  font-size: 16px;
+}
+@media (min-width: 1440px) {
+  html {
+    font-size: 17px;
+  }
+}
+@media (min-width: 1728px) {
+  html {
+    font-size: 18px;
+  }
+}
+@media (min-width: 2200px) {
+  html {
+    font-size: 19px;
+  }
+}
+@media (min-width: 2560px) {
+  html {
+    font-size: 20px;
+  }
+}
+@media (min-width: 3200px) {
+  html {
+    font-size: 22px;
+  }
+}
+
+/* --prose-width steps up on the same wide screens, in its own media queries so each of the
+   font-size breakpoints above stays exactly as pinned. Capped at 48rem — prose keeps reading
+   like prose even on a very wide window; the middle section itself (--col-width) is the part
+   that is meant to fill more of the screen. */
+@media (min-width: 1728px) {
+  :root {
+    --prose-width: 40rem;
+  }
+}
+@media (min-width: 2200px) {
+  :root {
+    --prose-width: 44rem;
+  }
+}
+@media (min-width: 2560px) {
+  :root {
+    --prose-width: 48rem;
+  }
+}
+
+/* Theme button (Demo 7 "Style button"): System (default) follows the OS via this media query;
+   :not([data-theme="light"]) keeps it applying when data-theme is absent (System) or "dark", and
+   the explicit ":root[data-theme=\"dark\"]" block right below carries the same declarations for a
+   browser under a light OS whose theme was explicitly set to Dark. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1b1d;
+    --fg: #dcd8cf;
+    --muted: #9a958c;
+    --faint: #6f6b64;
+    --line: #2e2e31;
+    --nav-bg: #212124;
+    --nav-active: #2c2c30;
+    --accent: #d6a55c;
+    --accent-fg: #1b1b1d;
+    --ok: #7cc47a;
+    --ok-bg: #1f2a1f;
+    --danger: #e07a64;
+    --danger-fg: var(--accent-fg); /* T12: #1b1b1d on #e07a64 reaches ≥4.5:1; white was 2.9:1 */
+    --user-bg: #26262a;
+    --working: #8e9bb3;
+    --live: #62d17a;
+    --danger-dot: #ee6a52;
+    --code-bg: #141416;
+    --code-head: #1e1f22;
+    --ann-bg: #26241e;
+    --chip-bg: #2b3546;
+    --chip-fg: #c8d5ea;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--bg));
+    --ring: color-mix(in srgb, var(--accent) 55%, transparent);
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.35);
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --dur-1: 140ms;
+    --dur-2: 220ms;
+  }
+}
+
+/* Must stay identical to the @media (prefers-color-scheme: dark) block above: this is what makes
+   Dark work under a light OS (and System under a dark OS keep working via the media query alone). */
+:root[data-theme="dark"] {
+  --bg: #1b1b1d;
+  --fg: #dcd8cf;
+  --muted: #9a958c;
+  --faint: #6f6b64;
+  --line: #2e2e31;
+  --nav-bg: #212124;
+  --nav-active: #2c2c30;
+  --accent: #d6a55c;
+  --accent-fg: #1b1b1d;
+  --ok: #7cc47a;
+  --ok-bg: #1f2a1f;
+  --danger: #e07a64;
+  --danger-fg: var(--accent-fg); /* T12: #1b1b1d on #e07a64 reaches ≥4.5:1; white was 2.9:1 */
+  --user-bg: #26262a;
+  --working: #8e9bb3;
+  --live: #62d17a;
+  --danger-dot: #ee6a52;
+  --code-bg: #141416;
+  --code-head: #1e1f22;
+  --ann-bg: #26241e;
+  --chip-bg: #2b3546;
+  --chip-fg: #c8d5ea;
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--bg));
+  --ring: color-mix(in srgb, var(--accent) 55%, transparent);
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.35);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-1: 140ms;
+  --dur-2: 220ms;
+}
+
+/* Native controls (scrollbars, form inputs) follow the explicit choice too. */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Polish: an accent-tinted text selection, and thin scrollbars on the two scroll areas that sit
+   quietly on the paper instead of the platform's heavy default. The thumb is --line nudged toward
+   --faint: plain --line all but vanishes against the dark theme's --nav-bg. */
+::selection {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.main,
+.nav {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--faint) 35%, var(--line)) transparent;
+}
+.main::-webkit-scrollbar,
+.nav::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.main::-webkit-scrollbar-track,
+.nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.main::-webkit-scrollbar-thumb,
+.nav::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--faint) 35%, var(--line));
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+.main::-webkit-scrollbar-thumb:hover,
+.nav::-webkit-scrollbar-thumb:hover {
+  background-color: var(--faint);
+}

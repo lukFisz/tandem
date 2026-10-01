@@ -1,0 +1,1387 @@
+/* Base. Later tasks append component sections below, each under a comment header. */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 0.90625rem/1.6 var(--font-prose);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+code { font-family: var(--font-code); font-size: 0.9em; }
+kbd {
+  font: 0.6875rem var(--font-ui);
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 0 4px;
+  margin-left: 6px;
+  color: var(--muted);
+}
+.center { display: grid; place-items: center; min-height: 100%; font-family: var(--font-ui); }
+.muted { color: var(--muted); }
+.kicker {
+  font: 600 0.6875rem/1.4 var(--font-ui);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 4px;
+}
+.prose { max-width: var(--prose-width); }
+.prose > :first-child { margin-top: 0; }
+.prose > :last-child { margin-bottom: 0; }
+.prose pre { overflow-x: auto; }
+.actions { display: flex; gap: 6px; margin-top: 10px; font-family: var(--font-ui); }
+.btn {
+  font: 0.78125rem var(--font-ui);
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+.btn:hover:not(:disabled) { border-color: var(--muted); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn.small { padding: 2px 9px; font-size: 0.71875rem; }
+.btn.link { border: none; background: none; padding: 2px 4px; color: var(--muted); text-decoration: underline; }
+/* Theme button: an icon only, fixed width so switching ◐ / ☀ / ☾ never shifts its neighbours. */
+.btn.theme-btn { min-width: 2.25rem; padding-inline: 0; text-align: center; font-size: 1rem; line-height: 1; }
+.settings { position: relative; }
+.settings-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  min-width: 14rem;
+  padding: 6px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--fg) 12%, transparent);
+  font: 0.78125rem var(--font-ui);
+}
+.settings-kicker {
+  font: 600 0.6875rem/1.4 var(--font-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 8px 10px 2px;
+}
+.settings-seg {
+  display: flex;
+  gap: 0;
+  margin: 2px 6px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.settings-seg button {
+  flex: 1;
+  padding: 5px 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: 0.75rem var(--font-ui);
+  cursor: pointer;
+}
+.settings-seg button:hover:not([aria-checked='true']) { color: var(--fg); }
+.settings-seg button[aria-checked='true'] { background: var(--nav-active); color: var(--fg); font-weight: 600; }
+.settings-check { color: var(--ok); }
+.settings-hint { padding: 0 10px 8px; color: var(--faint); font-size: 0.71875rem; }
+.settings-empty { padding: 4px 10px 8px; color: var(--muted); }
+.settings-error { padding: 4px 10px 8px; color: var(--danger); }
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  font: 0.78125rem var(--font-ui);
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+}
+.settings-row:hover:not(:disabled) { background: var(--nav-active); }
+.settings-row:disabled { opacity: 0.45; cursor: default; }
+.settings-row.is-current { font-weight: 600; }
+.file-path {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+}
+.file-path { display: inline-flex; align-items: center; gap: 6px; }
+.file-path-status { font: 0.6875rem var(--font-ui); color: var(--muted); animation: tdm-fade var(--dur-1) var(--ease-out) backwards; }
+.file-path-status:empty { display: none; }
+.file-path-status.is-opened { color: var(--ok); }
+.code-head .file-path-status.is-opened { color: #7cc47a; }
+.tdm-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: tdm-spin 0.8s linear infinite;
+}
+@keyframes tdm-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .tdm-spinner { animation: none; border-top-color: var(--accent); opacity: 0.8; }
+}
+.file-path:hover { text-decoration-color: currentColor; color: var(--accent); }
+.process-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--nav-bg);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--working);
+  font: 0.78125rem var(--font-ui);
+}
+.process-row { display: flex; align-items: center; gap: 10px; }
+.process-tail {
+  margin: 4px 0 0 calc(0.75rem + 10px);
+  padding: 0;
+  font: 0.71875rem/1.45 var(--font-code);
+  color: var(--muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: calc(3 * 1.45em);
+  overflow: hidden;
+}
+.process-card.is-ok { border-left-color: var(--ok); }
+.process-card.is-fail { border-left-color: var(--danger); }
+.process-card.is-unknown { border-left-color: var(--faint); }
+.process-mark { flex: none; font-size: 0.75rem; line-height: 1; }
+.process-card.is-running .process-mark {
+  color: var(--working);
+  animation: tdm-pulse 1.6s ease-in-out infinite;
+}
+.process-card.is-ok .process-mark { color: var(--ok); }
+.process-card.is-fail .process-mark { color: var(--danger); }
+.process-card.is-unknown .process-mark { color: var(--muted); }
+.process-cmd {
+  font: 0.78125rem var(--font-code);
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.process-status {
+  flex: none;
+  margin-left: auto;
+  color: var(--muted);
+  font: 0.71875rem var(--font-ui);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+  .process-card.is-running .process-mark { animation: none; }
+}
+
+/* ---- Code ---- */
+.code-panel {
+  margin: 0;
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 100%;
+}
+.code-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  background: var(--code-head);
+  padding: 6px 12px;
+  font: 0.71875rem var(--font-code);
+  color: #8c8f96;
+}
+.code-lines { padding: 8px 0; overflow-x: auto; font: 0.78125rem/1.65 var(--font-code); }
+/* On a narrow panel the end group (change stat, switch, range, expand) wraps under the path, right-aligned. */
+.code-head-end { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px 8px; flex: none; max-width: 100%; margin-left: auto; }
+.code-row { display: flex; min-width: max-content; }
+.code-row.is-selected { background: var(--code-sel); }
+.code-row .ln {
+  flex: none;
+  width: 2.75rem;
+  padding: 0 12px 0 0;
+  text-align: right;
+  color: var(--code-ln);
+  font: inherit;
+  background: none;
+  border: none;
+  user-select: none;
+}
+.code-row button.ln { cursor: pointer; }
+.code-row button.ln:hover { color: var(--code-fg); }
+.code-row .src { white-space: pre; padding-right: 16px; font: inherit; }
+/* Line drag: the native selection is suppressed and the press-and-hold start line pulses. */
+.is-line-dragging { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+.is-line-dragging * { cursor: grabbing !important; }
+/* The selection bar would shift the rows under the pointer mid-drag. */
+.is-line-dragging .sel-bar, .is-line-dragging .comment-editor { display: none; }
+[data-ls][data-pulse] { animation: line-pulse 0.4s ease-out; }
+@keyframes line-pulse { 0% { background: color-mix(in srgb, var(--accent) 35%, transparent); } 100% { background: transparent; } }
+.code-loading, .code-error { padding: 10px 14px; font: 0.75rem var(--font-ui); color: #8c8f96; }
+
+/* ---- Markdown ---- */
+.prose h1, .prose h2, .prose h3 { font-family: var(--font-prose); line-height: 1.3; }
+.prose blockquote { margin: 0; padding-left: 12px; border-left: 2px solid var(--line); color: var(--muted); }
+.prose .md-code, .md-code {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font: 0.78125rem/1.6 var(--font-code);
+  overflow-x: auto;
+}
+.prose :not(pre) > code { background: var(--user-bg); padding: 0 4px; border-radius: 4px; }
+
+/* ---- Blocks ---- */
+/* :not(.is-selected) keeps the selection tint (line 71) winning over the hot-line tint on the same row. */
+.code-row.has-note:not(.is-selected) { background: #ffffff0d; }
+.note { max-width: var(--prose-width); }
+.line-note {
+  margin: 4px 14px 6px 56px;
+  padding: 6px 10px;
+  border-left: 2px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  background: var(--ann-bg);
+  color: var(--ann-fg);
+  font: italic 0.8125rem/1.5 var(--font-prose);
+  white-space: pre-wrap;
+}
+.line-note.is-sent { border-left-color: var(--sent-bar); font: 0.78125rem/1.5 var(--font-ui); background: #25262a; color: #d5d6da; }
+.line-note.is-draft { border-left-color: var(--draft-bar); font: 0.78125rem/1.5 var(--font-ui); background: var(--draft-bg); color: var(--draft-fg); }
+.line-note .who {
+  display: block;
+  font: 600 0.65625rem var(--font-ui);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  font-style: normal;
+}
+.line-note .note-actions { margin-left: 8px; }
+.line-note .note-actions .btn.link { color: inherit; opacity: 0.75; font-size: 0.6875rem; }
+.sel-bar { margin: 2px 14px 6px 56px; }
+.code-panel .comment-editor { margin: 4px 14px 8px 56px; }
+.md-block { max-width: calc(var(--prose-width) + 3.75rem); }
+.md-path { font: 0.71875rem var(--font-code); color: var(--muted); }
+/* The markdown block's header row: its path, and the expand control at the far right. */
+.md-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; color: var(--muted); }
+.md-section { display: grid; grid-template-columns: 3rem 1fr; column-gap: 8px; border-radius: 6px; }
+.md-section.is-selected { background: var(--user-bg); }
+/* A top-level list is split into one section per item, each in its own <ul>/<ol>: only the first
+   and last keep the list's outer margins, so the items still read as one continuous list. */
+.md-list-item:not(.md-list-first) > .prose > :is(ul, ol) { margin-top: 0; }
+.md-list-item:not(.md-list-last) > .prose > :is(ul, ol) { margin-bottom: 0; }
+.md-gutter {
+  font: 0.6875rem var(--font-code);
+  color: var(--faint);
+  text-align: right;
+  padding-top: 0.35em;
+  background: none;
+  border: none;
+  user-select: none;
+}
+button.md-gutter { cursor: pointer; }
+button.md-gutter:hover { color: var(--accent); }
+.md-notes { grid-column: 2; }
+.md-notes .line-note, .md-notes .sel-bar, .md-notes .comment-editor { margin-left: 0; }
+.md-notes .line-note.is-ai { background: transparent; color: var(--muted); }
+.md-notes .line-note.is-sent { background: var(--user-bg); color: var(--fg); }
+
+/* ---- Variants ---- */
+.variants { max-width: 100%; }
+.variant-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.variant {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.84375rem;
+  min-width: 0;
+}
+.variant.is-chosen, .variant.is-selected { border-color: var(--accent); }
+/* Before sending, the selected card carries a 1px ring; once chosen it is quieter: an accent bar on
+   its left edge (padding-left drops by the extra 2px so the text does not shift) and a soft tint. */
+.variant.is-selected { box-shadow: 0 0 0 1px var(--accent); }
+.variant.is-chosen { border-left: 3px solid var(--accent); padding-left: 10px; }
+.variant h4 { margin: 0; font: 600 0.875rem var(--font-prose); }
+.pros-cons { margin: 0; padding: 0; list-style: none; font: 0.78125rem/1.5 var(--font-ui); }
+.pros-cons .pro { color: var(--ok); }
+.pros-cons .con { color: var(--danger); }
+.pros-cons .pro::before { content: "+ "; font-weight: 600; }
+.pros-cons .con::before { content: "− "; font-weight: 600; }
+.variant-foot { margin-top: auto; font-family: var(--font-ui); }
+.chip {
+  display: inline-block;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font: 0.75rem var(--font-ui);
+  border: 1px solid var(--line);
+}
+.variant-chosen { display: inline-flex; align-items: center; gap: 4px; font: 600 0.75rem var(--font-ui); color: var(--accent); }
+.variant-extra { display: flex; gap: 8px; align-items: center; margin-top: 8px; font-family: var(--font-ui); }
+.variant-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  font-family: var(--font-ui);
+}
+.variant-confirm .actions { display: flex; gap: 8px; margin-top: 0; }
+.code-panel.is-nested .code-lines { padding: 6px 0; }
+
+/* ---- Stage ---- */
+.stage { display: flex; flex-direction: column; gap: 16px; max-width: var(--col-width); min-height: 100%; margin-inline: auto; }
+/* The stage view's own text content (title/goal, the thread list, the "waiting for the AI"
+   note) stays at reading width even though .stage itself now spans the wider column like
+   .thread does — the wider column has no visible effect on it, same as it already had none on
+   .thread's own prose (.prose/.conclusion/.typing-bubble), so ≤1280px is unchanged (review
+   round 3, Important). */
+.stage > header, .stage-threads, .stage .muted { max-width: var(--prose-width); }
+.stage .goal { margin: 4px 0 0; color: var(--muted); font-style: italic; }
+/* Each row is one block: the status icon sits in a fixed slot and the conclusion hangs under the
+   title text by that same width (--stage-icon-w), so a thread and its conclusion read together. */
+.stage-threads { --stage-icon-w: 1.25rem; list-style: none; padding: 0; margin: 0; font-family: var(--font-ui); font-size: 0.84375rem; }
+.stage-threads > li { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.stage-thread-icon { display: inline-block; width: var(--stage-icon-w); }
+.stage-threads > li > a { text-decoration: none; }
+.stage-threads > li > a:hover { text-decoration: underline; }
+.stage-concl { color: var(--muted); font: 0.8125rem var(--font-prose); margin-top: 4px; margin-left: var(--stage-icon-w); }
+/* Thread conclusions are markdown (Prose): keep them a compact block under the thread title. */
+.stage-concl p, .stage-concl ul, .stage-concl ol, .stage-concl pre, .stage-concl blockquote { margin: 0.35em 0; }
+.stage-concl ul, .stage-concl ol { padding-left: 2em; }
+.stage-concl strong { color: var(--fg); }
+/* Part E: the thread list folds to one line once a summary is proposed. */
+.stage-threads-toggle { align-self: flex-start; font: 0.8125rem var(--font-ui); color: var(--muted); background: none; border: none; padding: 0; cursor: pointer; }
+.stage-threads-toggle:hover { color: var(--fg); }
+
+/* ---- Thread ---- */
+.thread { display: flex; flex-direction: column; gap: 18px; max-width: var(--col-width); min-height: 100%; margin-inline: auto; }
+.thread h1, .stage h1 { font: 600 1.375rem/1.3 var(--font-prose); margin: 0; }
+/* Demo 7 follow-ups 2: without a composer (a resolved thread, a read-only page) the last card
+   would sit on the page's bottom edge. The sticky composer is the article's last child and has its
+   own padding: under the article's padding it would stop 48px above the bottom, so it drops it. */
+.thread, .stage { padding-bottom: 48px; }
+.thread:has(> .composer), .stage:has(> .composer) { padding-bottom: 0; }
+.msg-user {
+  align-self: flex-end;
+  max-width: min(70%, var(--prose-width));
+  background: var(--user-bg);
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px 12px 2px 12px;
+  font: 0.84375rem/1.5 var(--font-ui);
+  white-space: pre-wrap;
+}
+/* Demo 6 follow-ups 2: a message the AI has not received yet is muted, with a dashed border, until
+   it is delivered. The base rule's transparent border keeps the switch from shifting the layout. */
+.msg-user.is-undelivered { background: transparent; border-style: dashed; border-color: var(--faint); color: var(--muted); }
+/* Demo 6 follow-ups 1: a user message is headed by a link to what it answers or chose. Like an id
+   chip, a long question is cut with an ellipsis. */
+.msg-ref {
+  display: block;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 0.75rem var(--font-ui);
+  color: var(--muted);
+  text-decoration: none;
+}
+.msg-ref:hover { color: var(--fg); text-decoration: underline; }
+.msg-choice, .msg-choice:hover { color: var(--accent); }
+.msg-ref-icon { vertical-align: -1px; margin-right: 4px; }
+.msg-ref:not(:last-child) { margin-bottom: 2px; }
+.msg-comments {
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  font: 600 0.75rem var(--font-ui);
+  color: var(--muted);
+  text-align: left;
+  cursor: pointer;
+}
+.msg-comments:hover { color: var(--fg); text-decoration: underline; }
+.msg-comments:not(:last-child) { margin-bottom: 2px; }
+/* An answer message's text is "Answered: <value>" (domain.AnswerMessage): the label sits on its
+   own muted line, like .msg-ref/.msg-comments, and the value on the next with emphasis, so the two
+   read as label + value instead of running together. */
+.msg-answer-label { font: 600 0.75rem var(--font-ui); color: var(--muted); margin-right: 6px; }
+.msg-answer { font-weight: 600; }
+/* Question message spec: an AI bubble with answer buttons, or a muted status line once closed. */
+.msg-question {
+  align-self: flex-start;
+  max-width: var(--prose-width);
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px 12px 12px 2px;
+}
+.question-options, .question-other { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; font-family: var(--font-ui); }
+.question-status { margin: 8px 0 0; color: var(--muted); font: 0.78125rem var(--font-ui); }
+.line-note.is-flash { animation: tdm-flash 1.6s ease-out; }
+@keyframes tdm-flash {
+  from { box-shadow: 0 0 0 2px var(--accent); }
+  to { box-shadow: 0 0 0 2px transparent; }
+}
+/* Demo 6 follow-ups 3: the option or question a chip or header link jumped to gets a soft tint that
+   fades out. highlightJumpTarget (shell/motion.ts) drops the class after JUMP_HIGHLIGHT_MS, so a
+   repeated jump plays it again. */
+.is-jump-target { animation: tdm-jump 1s ease-out; }
+@keyframes tdm-jump {
+  from { background-color: color-mix(in srgb, var(--accent) 18%, transparent); }
+}
+.delivery-status {
+  align-self: flex-end;
+  margin: -12px 0 0;
+  font: 0.75rem var(--font-ui);
+  color: var(--muted);
+}
+.typing-bubble {
+  align-self: flex-start;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  max-width: var(--prose-width);
+  animation: tdm-enter var(--dur-2) var(--ease-out) backwards;
+}
+/* The working indicator: a pixel diamond. A 3x3 grid of pixels set on its corner; a ripple pulses
+   out from the centre (each pixel's delay grows with its distance from it). Only transform and
+   opacity animate. Under reduced motion the animation pauses on its negative-delay frame, which
+   is a composed still. */
+.typing-diamond { position: relative; display: block; flex: none; width: 30px; height: 30px; color: var(--accent); }
+.typing-diamond .px-grid {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 22px;
+  height: 22px;
+  transform: rotate(45deg) scale(0.86);
+}
+.typing-diamond i {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 1.5px;
+  background: var(--accent);
+  animation: tdm-px 1.5s ease-in-out infinite;
+}
+.typing-diamond i:nth-child(1) { left: 0; top: 0; animation-delay: -1.14s; }
+.typing-diamond i:nth-child(2) { left: 8px; top: 0; animation-delay: -1.32s; }
+.typing-diamond i:nth-child(3) { left: 16px; top: 0; animation-delay: -1.14s; }
+.typing-diamond i:nth-child(4) { left: 0; top: 8px; animation-delay: -1.32s; }
+.typing-diamond i:nth-child(5) { left: 8px; top: 8px; animation-delay: -1.5s; }
+.typing-diamond i:nth-child(6) { left: 16px; top: 8px; animation-delay: -1.32s; }
+.typing-diamond i:nth-child(7) { left: 0; top: 16px; animation-delay: -1.14s; }
+.typing-diamond i:nth-child(8) { left: 8px; top: 16px; animation-delay: -1.32s; }
+.typing-diamond i:nth-child(9) { left: 16px; top: 16px; animation-delay: -1.14s; }
+@keyframes tdm-px {
+  0%, 100% { transform: scale(0.3); opacity: 0.2; }
+  35% { transform: scale(1); opacity: 1; }
+  70% { transform: scale(0.5); opacity: 0.4; }
+}
+.typing-bubble.is-quiet {
+  padding: 10px 14px;
+  border-radius: 2px 12px 12px 12px;
+  background: var(--user-bg);
+  font: 0.8125rem var(--font-ui);
+  color: var(--muted);
+}
+.typing-bubble.has-text { gap: 4px; font: 0.8125rem var(--font-ui); color: var(--muted); }
+.typing-bubble.has-text .typing-text { margin-right: 4px; color: var(--fg); }
+.stage .typing-bubble { width: fit-content; margin-top: 16px; }
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+@keyframes tdm-caret {
+  to { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .typing-bubble { animation: none; }
+  .typing-diamond i { animation-play-state: paused; }
+  .line-note.is-flash { animation: none; outline: 2px solid var(--accent); }
+  .is-jump-target { animation: none; background-color: color-mix(in srgb, var(--accent) 18%, transparent); }
+}
+.conclusion {
+  background: var(--ok-bg);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  max-width: var(--prose-width);
+}
+.conclusion .kicker { color: var(--ok); }
+.conclusion.is-resolved { border-left: 3px solid var(--ok); }
+.conclusion .comment-editor { margin-top: 12px; }
+.stage-next { margin: 10px 0 0; font: 0.8125rem var(--font-ui); }
+.resolve-bar { display: flex; align-items: center; gap: 8px; font-family: var(--font-ui); }
+.resolve-hint { font-size: 0.75rem; color: var(--faint); }
+.resolve-hint kbd { margin: 0 2px; }
+.superseded summary { font: 0.75rem var(--font-ui); color: var(--faint); cursor: pointer; }
+.superseded[open] summary { margin-bottom: 8px; }
+.superseded-link { font: inherit; color: var(--muted); padding: 0; }
+.superseded-link:hover { color: var(--fg); }
+/* ---- Proposal card (stage summary flow spec, part D) ---- */
+/* One header row for the kicker, version, markers, actions and toggle, so Accept and Edit stay in
+   reach while the card is collapsed to its one-line preview. */
+.proposal-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-family: var(--font-ui); }
+.proposal-head .kicker { margin-bottom: 0; }
+.proposal-version { font-size: 0.6875rem; color: var(--faint); }
+.proposal-head .edited-by-you { font-size: 0.6875rem; color: var(--muted); }
+.proposal-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.proposal > .prose, .proposal > .comment-editor { margin-top: 8px; }
+/* Demo 7 follow-ups 1: a flex row, so only the sentence is ellipsis-clipped and the "(...)" marker
+   after it (when the text holds more) always shows. */
+.proposal-preview { display: flex; margin: 6px 0 0; color: var(--muted); font-family: var(--font-prose); }
+.proposal-preview-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proposal-preview-more { flex: none; margin-left: 0.3em; color: var(--muted); white-space: nowrap; }
+/* "Updated": the AI re-proposed while the card was collapsed. It pulses once, and is a still accent
+   pill under reduced motion. */
+.proposal-updated { font: 600 0.6875rem/1.4 var(--font-ui); color: var(--accent-fg); background: var(--accent); border-radius: 999px; padding: 0 8px; animation: tdm-updated-pulse 1.2s ease-out 1; }
+@keyframes tdm-updated-pulse {
+  from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); }
+  to { box-shadow: 0 0 0 8px transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .proposal-updated { animation: none; }
+}
+.composer {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  background: var(--bg);
+  padding: 10px 0 14px;
+  font-family: var(--font-ui);
+}
+.composer-card.input-card { padding: 10px 12px 8px; }
+/* Auto-grows with its content (Composer.tsx) up to 40vh, then scrolls. */
+.composer-card.input-card textarea { display: block; font-size: 0.9375rem; line-height: 1.55; min-height: 2.4em; max-height: 40vh; }
+.composer-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+.composer-hint { font: 0.71875rem var(--font-ui); color: var(--faint); }
+.composer-send {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-fg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform var(--dur-1), box-shadow var(--dur-1), opacity var(--dur-1);
+}
+.composer-send:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--shadow-1); }
+.composer-send:disabled { opacity: 0.35; cursor: default; }
+
+/* ---- Shell ---- */
+.app { display: flex; flex-direction: column; height: 100%; }
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0.5625rem 1rem;
+  border-bottom: 1px solid var(--line);
+  font: 0.8125rem var(--font-ui);
+}
+.topbar .home { font-weight: 700; text-decoration: none; color: var(--accent); }
+.topbar .title { font-weight: 600; }
+.ai-status { color: var(--muted); }
+.ai-status.is-waiting { color: var(--fg); }
+/* The status dot: a 16px box holding three <i>, of which each state shows the ones it needs.
+   waiting = green lub-dub heartbeat with a soft halo; working = three green dots in a travelling
+   wave; reconnecting = blinking amber dot; not connected (quiet or lost) = the same heartbeat,
+   red. Only transform and opacity animate; reduced motion keeps the dots, still. */
+.ai-status .dot {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.ai-status .dot i {
+  --s: 7px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: none;
+  width: var(--s);
+  height: var(--s);
+  margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
+  border-radius: 50%;
+}
+.ai-status .dot.is-waiting i:nth-child(1),
+.ai-status .dot.is-quiet i:nth-child(1),
+.ai-status .dot.is-lost i:nth-child(1) {
+  display: block;
+  z-index: 1;
+  background: var(--live);
+  animation: tdm-heart 1.6s ease-in-out infinite;
+  animation-delay: -0.15s;
+}
+.ai-status .dot.is-waiting i:nth-child(2),
+.ai-status .dot.is-quiet i:nth-child(2),
+.ai-status .dot.is-lost i:nth-child(2) {
+  display: block;
+  background: var(--live);
+  animation: tdm-heart-halo 1.6s ease-out infinite;
+  animation-delay: -0.15s;
+}
+.ai-status .dot.is-quiet i:nth-child(1),
+.ai-status .dot.is-quiet i:nth-child(2),
+.ai-status .dot.is-lost i:nth-child(1),
+.ai-status .dot.is-lost i:nth-child(2) { background: var(--danger-dot); }
+.ai-status .dot.is-working i {
+  --s: 4px;
+  display: block;
+  background: var(--live);
+  animation: tdm-wave 1s ease-in-out infinite;
+}
+.ai-status .dot.is-working i:nth-child(1) { margin-left: -7px; animation-delay: -0.9s; }
+.ai-status .dot.is-working i:nth-child(2) { animation-delay: -0.75s; }
+.ai-status .dot.is-working i:nth-child(3) { margin-left: 3px; animation-delay: -0.6s; }
+.ai-status .dot.is-reconnecting i:nth-child(1) {
+  display: block;
+  background: var(--accent);
+  animation: tdm-blink 1.2s ease-in-out infinite;
+  animation-delay: -0.3s;
+}
+@keyframes tdm-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.7); }
+}
+@keyframes tdm-heart {
+  0%, 40%, 100% { transform: scale(1); }
+  10% { transform: scale(1.35); }
+  20% { transform: scale(1); }
+  28% { transform: scale(1.22); }
+}
+@keyframes tdm-heart-halo {
+  0%, 5% { transform: scale(1); opacity: 0; }
+  12% { opacity: 0.35; }
+  55%, 100% { transform: scale(2.4); opacity: 0; }
+}
+@keyframes tdm-wave {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.55; }
+  30% { transform: translateY(-3.5px); opacity: 1; }
+}
+@keyframes tdm-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-status .dot i { animation-play-state: paused; }
+}
+.ai-status-hint { font-size: 0.75rem; }
+.top-actions { margin-left: auto; display: flex; gap: 6px; }
+.body { display: flex; flex: 1; min-height: 0; }
+.nav {
+  width: 14.375rem;
+  flex: none;
+  overflow-y: auto;
+  background: var(--nav-bg);
+  border-right: 1px solid var(--line);
+  padding: 0.75rem 0.5rem;
+  font: 0.78125rem var(--font-ui);
+}
+.nav-stage { margin-bottom: 10px; }
+.nav-stage-title, .nav-thread {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+.nav-stage-title { padding: 4px 6px; color: var(--muted); font-weight: 600; font-size: 0.71875rem; }
+.nav-thread { padding: 4px 8px; }
+.nav-thread.is-resolved { color: var(--faint); }
+.nav-stage-title.is-active, .nav-thread.is-active { background: var(--nav-active); color: var(--fg); font-weight: 600; }
+.nav-thread .label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The transition lives on the base icon rule, not on .is-just-resolved: when useJustResolved
+   drops that class after JUST_RESOLVED_MS, the icon must still ease from --ok back to its resting
+   color, which requires the transition to apply to the state it's transitioning *to*. */
+.nav-thread .icon { transition: color 0.4s ease-out; }
+/* Resolve feedback 2: a thread that just became resolved pops its ✓ in with a short green flash.
+   The class is dropped by useJustResolved after JUST_RESOLVED_MS, so it plays once. */
+.nav-thread.is-just-resolved { animation: tdm-resolved-flash 1s ease-out; }
+.nav-thread.is-just-resolved .icon { display: inline-block; color: var(--ok); animation: tdm-resolved-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes tdm-resolved-flash {
+  /* color-mix keeps the flash visibly distinct from --nav-bg in both themes, unlike the old
+     --ok-bg which was nearly indistinguishable from the dark nav background. */
+  from { background-color: color-mix(in srgb, var(--ok) 25%, transparent); color: var(--ok); }
+}
+@keyframes tdm-resolved-pop {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.35); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-thread .icon { transition: none; }
+  .nav-thread.is-just-resolved,
+  .nav-thread.is-just-resolved .icon { animation: none; }
+}
+.badge {
+  margin-left: auto;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 0.625rem;
+  line-height: 16px;
+  text-align: center;
+}
+/* The "awaiting you" dot: a proposed stage summary, or a thread's open question (question message spec). */
+.nav-stage-title .badge, .nav-thread .badge.is-dot { min-width: 8px; height: 8px; padding: 0; }
+.main {
+  /* The scroll container is the containing block for absolutely positioned descendants (the
+     typing bubble's .visually-hidden label): without this they resolve against the viewport at
+     their scrolled-content offset and stretch the document, adding a second page scrollbar. */
+  position: relative;
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 32px 0;
+  min-width: 0;
+  /* Keep scrollIntoView targets clear of the sticky composer (set by Composer.tsx). */
+  scroll-padding-bottom: var(--composer-height, 0px);
+}
+.new-below {
+  position: sticky;
+  left: 50%;
+  bottom: 4.5rem;
+  transform: translateX(-50%);
+  display: block;
+  margin-top: -2.25rem;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--fg);
+  font: 0.78125rem var(--font-ui);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.12);
+  cursor: pointer;
+}
+.new-below:hover { border-color: var(--muted); }
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  max-width: 420px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--fg);
+  color: var(--bg);
+  font: 0.8125rem var(--font-ui);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.2);
+}
+.toast.is-error { background: var(--danger); color: var(--danger-fg); }
+.toast-hint { grid-column: 1; opacity: 0.85; font-size: 0.75rem; }
+.toast .btn.link { grid-row: 1; grid-column: 2; color: inherit; }
+.session-list { max-width: var(--prose-width); margin: 48px auto; padding: 0 16px; font-family: var(--font-ui); }
+.session-list h1 { font: 600 1.5rem var(--font-prose); margin: 0 0 16px; }
+.session-list h2 { font-size: 0.8125rem; color: var(--muted); margin: 20px 0 6px; }
+.session-list ul { list-style: none; padding: 0; margin: 0; }
+.session-list li { padding: 6px 0; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: baseline; }
+.session-list-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.session-list-header h1 { margin: 0; }
+
+/* Demo2 follow-up 4: a thread or stage id in agent text, shown by its title. */
+.id-chip {
+  display: inline-block;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--chip-bg);
+  color: var(--chip-fg);
+  font: 500 0.875em var(--font-ui);
+  font-style: normal;
+  line-height: 1.5;
+  text-decoration: none;
+}
+.id-chip:hover { text-decoration: underline; }
+
+/* ---- Polish: transitions, states and entrances ---- */
+/* Short, eased state changes on everything the pointer or keyboard touches. The .nav-thread .icon
+   rules above keep their own transition (resolve feedback 2). */
+.btn,
+.settings-row,
+.settings-seg button,
+.nav-stage-title,
+.nav-thread,
+.id-chip,
+.file-path,
+.msg-ref,
+.msg-comments,
+.stage-threads > li > a,
+.question-options .btn,
+.new-below,
+.variant {
+  transition: background-color var(--dur-1), border-color var(--dur-1), color var(--dur-1), box-shadow var(--dur-1), transform var(--dur-1);
+}
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn.primary { background: linear-gradient(color-mix(in srgb, var(--fg) 92%, var(--bg)), var(--fg)); }
+.btn.primary:hover:not(:disabled) { box-shadow: var(--shadow-1); transform: translateY(-1px); }
+.btn.primary:active:not(:disabled) { box-shadow: none; transform: translateY(0); }
+/* The "Send to AI" count remounts on change (keyed in TopBar.tsx) and pops once. */
+.count-pop { display: inline-block; animation: tdm-pop 240ms var(--ease-out); }
+
+/* One focus ring for every control: a --bg gap, then the accent ring. */
+:is(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring);
+}
+.btn.primary:hover:not(:disabled):focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring), var(--shadow-1); }
+
+/* Every text input is the same soft card: it lights up while its field is focused, and that is the
+   focus indicator (the shared ring above steps aside for the field). */
+.input-card {
+  background: var(--nav-bg);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 8px 10px;
+  transition: border-color var(--dur-1), box-shadow var(--dur-1), background-color var(--dur-1);
+}
+.input-card:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-1);
+  background: var(--bg);
+}
+.input-card textarea,
+.input-card input {
+  width: 100%;
+  border: none;
+  background: none;
+  outline: none;
+  box-shadow: none;
+  resize: none;
+  font: 0.9rem/1.5 var(--font-ui);
+  color: var(--fg);
+  padding: 0;
+}
+/* --faint placeholder text is 2.4:1 on the light paper; --muted clears 3:1 in both themes. */
+.input-card textarea::placeholder,
+.input-card input::placeholder { color: var(--muted); opacity: 1; }
+.input-card textarea:focus-visible,
+.input-card input:focus-visible { outline: none; box-shadow: none; }
+.input-card.is-inline { padding: 4px 10px; border-radius: 999px; display: inline-flex; min-width: 12rem; }
+.question-other .input-card { flex: 1; }
+.input-card.is-inline input { font-size: 0.8125rem; }
+/* Inside the dark code panel the card keeps the panel's own colors. */
+.code-panel .input-card { background: var(--code-head); color: var(--code-fg); }
+.code-panel .input-card:focus-within { background: var(--code-bg); }
+.code-panel .input-card textarea,
+.code-panel .input-card input { color: var(--code-fg); }
+.code-panel .input-card textarea::placeholder,
+.code-panel .input-card input::placeholder { color: #8c8f96; }
+/* Action rows sit 8px under their input card. */
+.comment-editor .actions { margin-top: 8px; }
+/* The "None of these" reason editor opens right under the variant cards: give it air. */
+.variants > .comment-editor { margin-top: 14px; }
+
+/* Nav rows: a soft hover, and a 2px accent bar on the active row that grows in when it changes. */
+.nav-stage-title, .nav-thread { position: relative; }
+.nav-stage-title:hover:not(.is-active), .nav-thread:hover:not(.is-active) { background: color-mix(in srgb, var(--nav-active) 60%, transparent); }
+.nav-stage-title::before, .nav-thread::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 5px;
+  bottom: 5px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: scaleY(0);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.nav-stage-title.is-active::before, .nav-thread.is-active::before { transform: scaleY(1); }
+
+/* Top bar: a faint accent glow under its hairline. It sits above .body so the nav does not cover it. */
+.topbar { position: relative; z-index: 1; box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 12%, transparent); }
+
+/* A user message fades from undelivered (dashed, muted) to delivered. */
+.msg-user { transition: background-color 400ms, border-color 400ms, color 400ms; }
+
+/* Process card: the outcome tints the whole card, not only its left edge. */
+.process-card { transition: border-color var(--dur-2), background-color var(--dur-2); }
+.process-card.is-ok { background: color-mix(in srgb, var(--ok) 6%, var(--nav-bg)); }
+.process-card.is-fail { background: color-mix(in srgb, var(--danger) 7%, var(--nav-bg)); }
+.process-tail { animation: tdm-fade var(--dur-2) var(--ease-out) backwards; }
+/* One span per tail line, keyed by its text (ProcessCard.tsx): as the tail scrolls, the surviving
+   lines keep their nodes and only a new line enters. A running process shows a caret after it. */
+.process-tail-line { display: block; min-height: 1.45em; animation: tdm-enter var(--dur-2) var(--ease-out) backwards; }
+.process-card.is-running .process-tail-line:last-child::after {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 1em;
+  vertical-align: -0.15em;
+  margin-left: 2px;
+  background: var(--accent);
+  animation: tdm-caret 1s steps(2, start) infinite;
+}
+
+/* Code panel: lifted off the paper, with a faint row hover that never hides the selection tint. */
+.code-panel { box-shadow: var(--shadow-1); }
+.code-panel.is-nested { box-shadow: none; }
+.code-row:not(.is-selected):hover { background: rgb(255 255 255 / 0.03); }
+.code-row.has-note:not(.is-selected):hover { background: rgb(255 255 255 / 0.07); }
+.code-row button.ln { transition: color var(--dur-1); }
+
+/* Cards. */
+.conclusion, .msg-question { box-shadow: var(--shadow-1); }
+.variant:hover { transform: translateY(-1px); box-shadow: var(--shadow-1); }
+.variant.is-chosen { background: var(--accent-soft); }
+.variant.is-selected:hover { box-shadow: 0 0 0 1px var(--accent), var(--shadow-1); }
+/* Once a variant is chosen, the others step back and stop lifting, so the choice reads at a glance. */
+.variants:has(.variant.is-chosen) .variant:not(.is-chosen) {
+  opacity: 0.72;
+  transition: opacity var(--dur-2), background-color var(--dur-1), border-color var(--dur-1), box-shadow var(--dur-1), transform var(--dur-1);
+}
+.variants:has(.variant.is-chosen) .variant:not(.is-chosen):hover { transform: none; box-shadow: none; }
+
+/* Composer: content scrolling under the sticky composer fades out instead of being cut hard. */
+.composer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 16px;
+  background: linear-gradient(color-mix(in srgb, var(--bg) 0%, transparent), var(--bg));
+  pointer-events: none;
+}
+
+/* Entrances. One-shot and short; `backwards` fill so nothing lingers (a lingering transform or
+   opacity would leave a stacking context / containing block behind). */
+@keyframes tdm-enter {
+  from { opacity: 0; transform: translateY(6px); }
+}
+@keyframes tdm-fade {
+  from { opacity: 0; }
+}
+@keyframes tdm-rise {
+  from { opacity: 0; transform: translateY(8px); }
+}
+@keyframes tdm-drop {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+}
+@keyframes tdm-pop {
+  50% { transform: scale(1.18); }
+}
+/* A timeline item that arrived after the thread or stage was opened (ThreadView/StageView wrap it).
+   The wrapper is a column flex box with the parent's gap, so its item lays out as before. */
+.tl-item { display: flex; flex-direction: column; gap: inherit; }
+.tl-enter { animation: tdm-enter var(--dur-2) var(--ease-out) backwards; }
+/* One quiet fade per thread or stage switch (the article remounts). */
+.thread, .stage { animation: tdm-fade 160ms var(--ease-out) backwards; }
+.new-below { animation: tdm-fade 160ms var(--ease-out) backwards; }
+.toast { animation: tdm-rise var(--dur-2) var(--ease-out) backwards; }
+.settings-menu { transform-origin: top right; animation: tdm-drop 160ms var(--ease-out) backwards; }
+.line-note.is-draft:not(.is-flash) { animation: tdm-enter var(--dur-2) var(--ease-out) backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-enter,
+  .thread,
+  .stage,
+  .new-below,
+  .toast,
+  .settings-menu,
+  .process-tail,
+  .process-tail-line,
+  .count-pop,
+  .line-note.is-draft:not(.is-flash) { animation: none; }
+  .nav-stage-title::before,
+  .nav-thread::before,
+  .msg-user,
+  .process-card,
+  .variant,
+  .variants:has(.variant.is-chosen) .variant:not(.is-chosen) { transition: none; }
+  .btn:active:not(:disabled),
+  .btn.primary:hover:not(:disabled),
+  .variant:hover { transform: none; }
+}
+
+/* A running process's caret holds still. */
+@media (prefers-reduced-motion: reduce) {
+  .process-card.is-running .process-tail-line:last-child::after { animation: none; opacity: 0.7; }
+}
+
+/* The composer card and its send button hold still. */
+@media (prefers-reduced-motion: reduce) {
+  .input-card, .composer-send { transition: none; }
+  .composer-send:hover:not(:disabled) { transform: none; }
+}
+
+/* ---- Block modal (a code, file or markdown block expanded) ---- */
+.block-expand {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  opacity: 0.7;
+  transition: opacity var(--dur-1), color var(--dur-1);
+}
+.block-expand:hover { opacity: 1; color: var(--accent); }
+.block-modal {
+  width: min(94vw, 110rem);
+  max-width: none;
+  max-height: 92vh;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 0.35);
+  animation: tdm-modal-in var(--dur-2) var(--ease-out) backwards;
+}
+.block-modal::backdrop {
+  background: color-mix(in srgb, var(--fg) 35%, transparent);
+  backdrop-filter: blur(6px);
+  animation: tdm-fade var(--dur-2) var(--ease-out) backwards;
+}
+@keyframes tdm-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+}
+.block-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  font: 0.78125rem var(--font-ui);
+  color: var(--muted);
+}
+.block-modal-label { font-weight: 600; color: var(--fg); }
+.block-modal-path { font-family: var(--font-code); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.block-modal-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font: inherit;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--dur-1);
+}
+.block-modal-close:hover { color: var(--accent); }
+.block-modal-body { overflow: auto; max-height: calc(92vh - 44px); padding: 12px 14px; }
+/* Expanded, a document widens to a comfortable reading width and code reads a size up. */
+.block-modal .md-block { max-width: min(100%, 64rem); margin-inline: auto; }
+.code-panel.is-expanded .code-lines { font-size: 0.875rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .block-modal, .block-modal::backdrop { animation: none; }
+  .block-expand, .block-modal-close { transition: none; }
+}
+
+/* ---- Notes on selected text (textnote/) ---- */
+::highlight(tdm-note) { background-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+::highlight(tdm-note-hot), ::highlight(tdm-pending) { background-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.code-row, .md-section, .msg-user, .msg-ai-wrap { position: relative; }
+.tn-badge {
+  position: absolute;
+  left: 4px;
+  top: 0;
+  z-index: 1;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--font-ui);
+  font-size: 0.625rem;
+  line-height: inherit;
+  cursor: pointer;
+}
+.tn-badge:hover, .tn-badge:focus-visible { filter: brightness(1.3) drop-shadow(0 0 3px var(--accent)); outline: none; }
+.md-section > .tn-badge { left: 0; top: 0.35em; line-height: 1.4; }
+.msg-user > .tn-badge, .msg-ai-wrap > .tn-badge { left: -1.6rem; top: 8px; font-size: 0.75rem; line-height: 1; }
+.tn-badge.is-flash { animation: tdm-pop 0.5s ease-out 3; }
+.tn-pill {
+  position: fixed;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 10px;
+  border: none;
+  border-radius: 999px;
+  background: var(--fg);
+  color: var(--bg);
+  font: 0.75rem var(--font-ui);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+  animation: tdm-enter var(--dur-1) var(--ease-out) backwards;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tn-pill:hover { background: color-mix(in srgb, var(--fg) 88%, var(--accent)); }
+.tn-pill kbd { color: inherit; border-color: currentColor; opacity: 0.7; }
+.tn-pop {
+  position: fixed;
+  z-index: 50;
+  width: min(22rem, calc(100vw - 16px));
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--fg) 18%, transparent);
+  font: 0.78125rem/1.5 var(--font-ui);
+  animation: tdm-enter var(--dur-1) var(--ease-out) backwards;
+}
+.tn-pop .who { display: block; font: 600 0.65625rem var(--font-ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.tn-quote {
+  margin: 2px 0 6px;
+  padding-left: 8px;
+  max-height: 6.5em;
+  overflow: auto;
+  border-left: 2px solid color-mix(in srgb, currentColor 35%, transparent);
+  color: var(--muted);
+  font: 0.71875rem/1.45 var(--font-code);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.tn-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.tn-actions .btn.link { padding-left: 0; }
+.tn-actions .btn kbd { color: inherit; border-color: currentColor; opacity: 0.7; }
+.tn-card { border-left: 3px solid var(--sent-bar); border-radius: 4px 10px 10px 4px; max-height: 60vh; overflow: auto; }
+.tn-card:has(.is-draft) { border-left-color: var(--draft-bar); }
+.tn-card-note + .tn-card-note { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.tn-card .note-text { white-space: pre-wrap; margin-top: 2px; }
+.tn-row-actions { margin-top: 6px; display: flex; gap: 4px; }
+.tn-row-actions .btn.link { padding-left: 0; }
+/* A note block keeps its text where it was: its gutter hangs in the left margin and shows on hover. */
+.note .md-section { grid-template-columns: 1.75rem 1fr; column-gap: 4px; margin-left: calc(-1.75rem - 4px); }
+.note .md-gutter { opacity: 0; transition: opacity var(--dur-1); }
+.note .md-section:hover > .md-gutter, .note .md-section.is-selected > .md-gutter, .note .md-gutter:focus-visible { opacity: 1; }
+@media (max-width: 600px) {
+  .note .md-section { margin-left: 0; }
+  .msg-user > .tn-badge, .msg-ai-wrap > .tn-badge { left: auto; right: 4px; top: -10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tn-pill, .tn-pop, .tn-badge.is-flash { animation: none; }
+}
+
+/* ---- Changes vs git HEAD (diff/): gutter bars, the Changes switch, the diff modal ---- */
+/* Header: the +a ~m −d stat, the Changes switch and the Diff pill. */
+.diff-stat { display: inline-flex; gap: 6px; font: 0.6875rem var(--font-code); }
+.diff-stat .a { color: var(--diff-add); }
+.diff-stat .m { color: var(--diff-mod); }
+.diff-stat .d { color: var(--diff-del); }
+.diff-pill {
+  display: inline-flex;
+  align-items: center;
+  font: 500 0.6875rem var(--font-ui);
+  color: var(--code-fg);
+  background: transparent;
+  border: 1px solid #43454a;
+  border-radius: 999px;
+  padding: 1px 9px;
+  cursor: pointer;
+  transition: border-color var(--dur-1), color var(--dur-1);
+}
+.diff-pill:hover { border-color: #6f737a; color: #fff; }
+.diff-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: 500 0.6875rem var(--font-ui);
+  color: var(--code-fg);
+  cursor: pointer;
+  user-select: none;
+}
+.diff-switch .trk {
+  position: relative;
+  width: 24px;
+  height: 14px;
+  border-radius: 999px;
+  background: #43454a;
+  transition: background var(--dur-1);
+}
+.diff-switch .trk::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #dcd8cf;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.diff-switch.is-on .trk { background: var(--diff-add); }
+.diff-switch.is-on .trk::after { transform: translateX(10px); }
+
+/* Gutter: a bar column between the line number and the code (green added, blue modified) and a
+   red wedge on the row edge where lines were deleted. */
+.code-row .gbar {
+  flex: none;
+  position: relative;
+  width: 9px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+}
+.code-row button.gbar { cursor: pointer; }
+.code-row .gbar::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 1px;
+  transition: width var(--dur-1), left var(--dur-1);
+}
+.code-row .gbar.is-add::before { background: var(--diff-add); }
+.code-row .gbar.is-mod::before { background: var(--diff-mod); }
+.code-row .gbar:hover::before { left: 1px; width: 5px; }
+.code-row .delmark {
+  position: absolute;
+  left: 2.75rem;
+  top: -4px;
+  z-index: 1;
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: none;
+  border-left: 6px solid var(--diff-del);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  background: none;
+  cursor: pointer;
+}
+.code-row .delmark.is-after { top: auto; bottom: -4px; }
+.code-row .delmark::after { content: ""; position: absolute; inset: -4px -6px -4px -10px; }
+.code-row .gtip {
+  position: absolute;
+  z-index: 5;
+  left: 14px;
+  bottom: calc(100% + 2px);
+  font: 0.6875rem/1.5 var(--font-ui);
+  color: #dcd8cf;
+  background: #0f0f10;
+  border: 1px solid #3a3b3f;
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-1);
+}
+.code-row .delmark .gtip { left: 8px; bottom: 6px; }
+.code-row .delmark.is-after .gtip { bottom: auto; top: 6px; }
+/* The code lines scroll sideways, which clips the top row's tip above it: show that one below. */
+.code-lines > .code-row:first-child .gbar .gtip { bottom: auto; top: calc(100% + 2px); }
+.code-row .gbar:hover .gtip, .code-row .delmark:hover .gtip { opacity: 1; }
+.is-line-dragging .gtip { display: none; }
+
+/* The Changes switch on: deleted lines ghosted in place, changed rows tinted with a + sign. */
+.code-row .diff-sign { flex: none; width: 12px; user-select: none; color: transparent; }
+.show-changes .code-row.is-add:not(.is-selected), .show-changes .code-row.is-mod:not(.is-selected) { background: var(--diff-add-bg); }
+.show-changes .code-row.is-add .ln, .show-changes .code-row.is-mod .ln,
+.show-changes .code-row.is-add .diff-sign, .show-changes .code-row.is-mod .diff-sign { color: var(--diff-add); }
+.code-row.is-ghost { background: var(--diff-del-bg); color: #c9a49b; user-select: none; -webkit-user-select: none; }
+.code-row.is-ghost:hover { background: var(--diff-del-bg); }
+.code-row.is-ghost .diff-sign { color: var(--diff-del); }
+.code-row.is-ghost .src { text-decoration: line-through; text-decoration-color: rgb(224 122 100 / 0.45); opacity: 0.8; }
+
+/* The diff modal: the block modal's dialog, sized for a diff, with a dark diff panel. */
+.block-modal.diff-modal { width: min(94vw, 72rem); }
+.diff-modal .block-modal-head { flex-wrap: wrap; }
+.diff-modal .block-modal-path { flex: 1; min-width: 8rem; }
+.diff-modal .block-modal-close { margin-left: 0; }
+.diff-modal .block-modal-body { max-height: calc(92vh - 80px); }
+.diff-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.diff-seg button {
+  font: 500 0.6875rem var(--font-ui);
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: background-color var(--dur-1), color var(--dur-1);
+}
+.diff-seg button:hover { color: var(--fg); }
+.diff-seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+/* On the modal's paper (light or dark), the theme's text green and red read better than the code-panel ones. */
+.diff-meta .diff-stat .a { color: var(--ok); }
+.diff-meta .diff-stat .d { color: var(--danger); }
+.diff-meta { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 10px; font: 0.75rem var(--font-ui); color: var(--muted); }
+.diff-empty { font: 0.75rem var(--font-ui); color: var(--muted); }
+.diff-view { border-radius: 8px; overflow: hidden; background: var(--code-bg); color: var(--code-fg); font: 0.8125rem/1.65 var(--font-code); }
+.diff-hunk { padding: 2px 12px; background: #25262a; color: #7a7e85; font-size: 0.72rem; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.diff-scroll { overflow-x: auto; min-width: 0; }
+.diff-split { display: grid; grid-template-columns: 1fr 1fr; }
+.diff-split > .diff-scroll:first-child { border-right: 1px solid #2b2d30; }
+.drow { display: flex; min-width: max-content; }
+.drow .ln { flex: none; width: 2.75rem; padding-right: 12px; text-align: right; color: var(--code-ln); user-select: none; }
+.drow .sg { flex: none; width: 16px; text-align: center; user-select: none; }
+.drow .src { white-space: pre; padding-right: 16px; font: inherit; }
+.drow.is-add { background: var(--diff-add-bg-strong); }
+.drow.is-add .sg { color: var(--diff-add); }
+.drow.is-del { background: var(--diff-del-bg-strong); }
+.drow.is-del .sg { color: var(--diff-del); }
+.drow.is-blank { background: repeating-linear-gradient(135deg, transparent 0 6px, rgb(255 255 255 / 0.025) 6px 12px); }
+.drow.is-excerpt { box-shadow: inset 2px 0 0 var(--accent); }
+.drow.is-flash { outline: 1px solid var(--accent); outline-offset: -1px; animation: diff-flash 1.6s var(--ease-out) forwards; }
+@keyframes diff-flash { 0%, 60% { outline-color: var(--accent); } 100% { outline-color: transparent; } }
+@media (max-width: 640px) {
+  .diff-split { grid-template-columns: 1fr; }
+  .diff-split > .diff-scroll:first-child { border-right: 0; border-bottom: 1px solid #2b2d30; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .diff-pill, .diff-switch .trk, .diff-switch .trk::after, .code-row .gbar::before, .code-row .gtip, .diff-seg button { transition: none; }
+  .drow.is-flash { animation: none; }
+}
