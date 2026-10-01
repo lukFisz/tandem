@@ -36,7 +36,7 @@ become a short decision document.
 - **[Stage-by-stage, thread-by-thread.](#core-concepts)** Big topics are broken into stages, and each stage into threads that
   end in a conclusion you accept.
 - **[Line comments, batched.](#keyboard-shortcuts)** Select lines or any text, write comments, then send them all at once with
-  **Send to AI · N**. Drafts survive page reloads, and restarts of the local server too while it gets its previous port back.
+  **Send to AI · N**. Drafts survive page reloads and, as long as the port stays the same, background server restarts.
 - **Real file snapshots with diffs.** File blocks keep real line numbers, show a diff against git `HEAD`, and
   open the file at that line in your editor (Cursor, VS Code, Zed, Sublime Text, IntelliJ IDEA, GoLand, WebStorm).
 - **Compare options.** The agent can post variants with pros and cons. You pick one, or reject all with a reason.
@@ -44,7 +44,7 @@ become a short decision document.
 - **Live progress.** Background commands appear as live cards, and the review page updates as the agent replies.
 - **[A decision document at the end.](#cli-reference)** `tdm export` (or **Export** on the review page) gives you the session title
   plus the accepted stage summaries, with no code or chat.
-- **[Local and self-contained.](#security-model)** A single Go binary is both the CLI and a local server bound to `127.0.0.1`, with the review page embedded.
+- **[Local and self-contained.](#security-model)** A single Go binary is both the CLI and a background server (the daemon) bound to `127.0.0.1`, with the review page embedded.
 
 ## Quickstart
 
@@ -88,7 +88,7 @@ flowchart LR
 5. When every thread in a stage is resolved, the agent proposes a stage summary for you to accept. The
    accepted summaries make up the decision document.
 
-Here is one full round from the agent's side (real output, token shortened). The `wait` calls return after you
+Here is one full round from the agent's side (real output; the token and the last `wait` are shortened). The `wait` calls return after you
 answer, accept the conclusion and accept the stage summary on the review page:
 
 ```console
@@ -181,8 +181,14 @@ go build -o ~/bin/tdm ./cmd/tdm   # ~/bin must be on your PATH
 
 Local builds report a version like `dev-19e9513b16a8`. To stamp one, use `go build -ldflags "-X main.version=v0.1.0" ./cmd/tdm`.
 
-**Uninstall.** Remove the binary, your sessions and the skill:
-`rm "$(command -v tdm)"; rm -rf ~/.tandem ~/.claude/skills/tandem` (adjust if you set `TANDEM_HOME` or `--dir`).
+**Uninstall.** Stop the daemon, then remove the binary, your sessions and the skill (drop `sudo` if you installed
+with a writable `PREFIX`; adjust the paths if you set `TANDEM_HOME` or `--dir`):
+
+```bash
+tdm daemon stop
+sudo rm "$(command -v tdm)"
+rm -rf ~/.tandem ~/.claude/skills/tandem
+```
 
 **Agent setup.** For Claude Code, run `tdm skill install` (use `--dir` to choose another location). For
 other agents, tell them to run `tdm guide` and follow it.

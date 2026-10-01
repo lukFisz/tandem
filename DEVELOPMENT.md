@@ -26,9 +26,9 @@ go test ./...
 ```
 
 `e2e/e2e_test.go` builds the binary twice with different `-X main.version` values to test daemon auto-start
-and restart on a version mismatch. Plain builds report `dev-<hash of the binary>`, so a rebuilt CLI always
-replaces an older running daemon. Use a scratch `TANDEM_HOME=$(mktemp -d)` when trying a dev build, because a
-rebuilt `tdm` replaces the daemon your real sessions use.
+and restart on a version mismatch. Plain builds report `dev-<hash of the binary>`, so a rebuilt CLI replaces
+any older running daemon, including the one your real sessions use. When trying a dev build, run
+`export TANDEM_HOME=$(mktemp -d)` first.
 
 ## Web UI
 
