@@ -3,7 +3,8 @@
 ## Prerequisites
 
 - Go 1.27 (from `go.mod`). Builds only on Unix: macOS and Linux.
-- Node 22.12 or later, needed only for work on the web UI (`web/`). This minimum comes from the Vite 8 and Vitest 5 engine requirements.
+- Node 22.12+, 24 or 26+ (not 23 or 25), needed only for work on the web UI (`web/`). This range comes from the
+  engine requirements of Vitest 5 (`^22.12.0 || ^24.0.0 || >=26.0.0`) and Vite 8 (`^20.19.0 || >=22.12.0`).
 - git.
 
 ## Layout
@@ -26,7 +27,8 @@ go test ./...
 
 `e2e/e2e_test.go` builds the binary twice with different `-X main.version` values to test daemon auto-start
 and restart on a version mismatch. Plain builds report `dev-<hash of the binary>`, so a rebuilt CLI always
-replaces an older running daemon.
+replaces an older running daemon. Use a scratch `TANDEM_HOME=$(mktemp -d)` when trying a dev build, because a
+rebuilt `tdm` replaces the daemon your real sessions use.
 
 ## Web UI
 
