@@ -1,6 +1,6 @@
 # TODO
 
-Minor follow-ups from the demo 7 final review (`docs/superpowers/specs/2026-09-27-demo7-followups.md`).
+Minor follow-ups from the demo 7 final review.
 
 - [ ] **Summary-pending bubble with an open stage question.** On an open stage with every thread resolved and an open stage question, the animated "waiting for the AI's stage summary" bubble still shows while the AI is not in `tdm wait`. An accepted stage already hides its waiting bubble while a question is open. Apply the same rule here: render the muted text instead of the bubble when there is an open stage question (`web/src/stage/StageView.tsx`, the `SUMMARY_PENDING` bubble, around line 285).
 - [ ] **"Nothing more planned" flashes after answering a stage question.** On an accepted last stage, answering the question clears it while the agent is still in `tdm wait`. The still text then shows until delivery flips `waiting`, which is usually under a second. Treat "stage `lastUserSeq` > `lastAiSeq`" as not still (`web/src/stage/StageView.tsx`, around line 259). A stage message sent from the end state has the same flash.

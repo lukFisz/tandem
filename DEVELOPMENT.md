@@ -84,9 +84,3 @@ Everything else is rejected with 403 before it reaches the daemon. That includes
 The dev server always binds port 5173 (`strictPort: true`). Open the page at `http://localhost:5173`,
 because that is the origin the proxy trusts as same-origin.
 
-## Design docs
-
-Design specs are in `docs/superpowers/specs/` and implementation plans in `docs/superpowers/plans/`. They
-are dated working documents, and some details have drifted from the code. Treat the code as the source of
-truth. Examples of drift: the API paths, the `schema/` directory, and questions and the theme toggle, which
-were out of MVP scope in the spec but are now implemented. The roadmap is in `docs/ROADMAP.md`.

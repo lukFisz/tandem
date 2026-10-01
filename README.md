@@ -272,24 +272,20 @@ go test ./internal/daemon -run TestSnapshotContractFixture -update   # regenerat
 The web UI lives in `web/` (React, TypeScript, Vite) and needs Node 22.12 or later. Its build output,
 `internal/daemon/webdist/`, is committed. Run `npm run build` and commit the result whenever you change the UI.
 `npm run dev` proxies a fixed allow-list of `/api` requests to the running daemon. See
-[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the full workflow, the dev proxy rules, Playwright e2e and known test caveats.
-
-Design specs and implementation plans are in [`docs/superpowers/specs/`](docs/superpowers/specs/) and
-[`docs/superpowers/plans/`](docs/superpowers/plans/), and the roadmap is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+[DEVELOPMENT.md](DEVELOPMENT.md) for the full workflow, the dev proxy rules, Playwright e2e and known test caveats.
 
 ## Project status
 
 Tandem is an early personal tool being prepared for its first public, single-user open-source release. There
 are no releases, tags or prebuilt binaries yet, and no CI. `go install` does not work yet because the module path
-(`github.com/lukaszfiszer/tandem`) doesn't match the repository URL. Homebrew and npm packaging are planned
-(see the [roadmap](docs/ROADMAP.md)). Only Claude Code has been tested as the driving agent.
+(`github.com/lukaszfiszer/tandem`) doesn't match the repository URL. Homebrew and npm packaging are planned. Only Claude Code has been tested as the driving agent.
 
 ## Contributing
 
 The project is early. Please open an issue at [github.com/lukFisz/tandem](https://github.com/lukFisz/tandem) to discuss a change before
 sending a larger pull request.
 Before opening a PR, run `go test ./...` and, for UI changes, `npm test` and `npm run build` in `web/`.
-[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) covers the setup.
+[DEVELOPMENT.md](DEVELOPMENT.md) covers the setup.
 
 ## License
 
