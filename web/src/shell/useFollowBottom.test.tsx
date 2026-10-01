@@ -556,6 +556,75 @@ describe('useFollowBottom re-applies a restored position as late content loads',
       }
     }))
 
+  // pin(): a jump's target is kept centered while content above it grows.
+  function makePinned() {
+    const c = makeClamping(700, 2000)
+    const target = document.createElement('div')
+    c.el.firstElementChild!.appendChild(target)
+    const box = { y: 344 } // the target's offset in the content; late content above moves it
+    target.scrollIntoView = vi.fn(() => {
+      c.el.scrollTop = box.y - 350
+    }) as typeof target.scrollIntoView
+    document.body.appendChild(c.el)
+    return { ...c, target, box }
+  }
+
+  it('pin() re-centers the target when content resizes, and reports the move', () =>
+    withRO(() => {
+      const { el, grow, target, box } = makePinned()
+      const onMoved = vi.fn()
+      const { result } = setup(el, 't_1:1:')
+      result.current.pin(target, onMoved)
+      grow(2000) // nothing moved the target: no scroll, no report
+      expect(onMoved).not.toHaveBeenCalled()
+      box.y = 935 // a file block above grew
+      grow(2600)
+      expect(el.scrollTop).toBe(585)
+      expect(onMoved).toHaveBeenCalledTimes(1)
+      box.y = 1200
+      grow(2900)
+      expect(el.scrollTop).toBe(850)
+      expect(onMoved).toHaveBeenCalledTimes(2)
+      el.remove()
+    }))
+
+  it('a user scroll input cancels the pin', () =>
+    withRO(() => {
+      for (const type of ['wheel', 'keydown', 'touchmove', 'pointerdown']) {
+        const { el, grow, target, box } = makePinned()
+        const { result, unmount } = setup(el, 't_1:1:')
+        result.current.pin(target)
+        el.dispatchEvent(new Event(type, { bubbles: true }))
+        box.y = 935
+        grow(2600)
+        expect(el.scrollTop, type).toBe(0)
+        unmount()
+        el.remove()
+      }
+    }))
+
+  it('pin() ends on a timeout, on cancelRestore() and on an item switch', () =>
+    withRO(() => {
+      vi.useFakeTimers()
+      try {
+        for (const end of ['timeout', 'cancel', 'switch']) {
+          const { el, grow, target, box } = makePinned()
+          const { result, rerender, unmount } = setup(el, 't_1:1:')
+          result.current.pin(target)
+          if (end === 'timeout') vi.advanceTimersByTime(3500)
+          else if (end === 'cancel') result.current.cancelRestore()
+          else rerender({ key: 't_2:1:' })
+          box.y = 935
+          grow(2600)
+          expect(el.scrollTop, end).toBe(0)
+          unmount()
+          el.remove()
+        }
+      } finally {
+        vi.useRealTimers()
+      }
+    }))
+
   it('does not start a pending restore when a landing target is used', () =>
     withRO(() => {
       const { el, grow, setHeight } = makeClamping(700, 3800)

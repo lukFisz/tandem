@@ -106,7 +106,13 @@ function LoadedSession({ sid, snapshot, connection }: { sid: string; snapshot: S
   // tint: on unmount, so no timer outlives the component, and on a jump to a new target, so the
   // element this effect is leaving behind isn't left tinted forever.
   // A jump also wins over a restored position still waiting for late content (cancelRestore).
+  // Late content moves the target too: a file block above it loads its text after the thread
+  // renders and pushes the target off screen (or the jump finds it already centered, then loses
+  // it). So the jump pins the target (follow.pin): it is re-centered whenever the content resizes,
+  // and the tint plays again each time that moves it, so it is seen on screen. The pin ends on the
+  // user's own scroll input, after a timeout, or on the next jump or item switch.
   const cancelRestore = follow.cancelRestore
+  const pin = follow.pin
   useEffect(() => {
     if (!scrollTo) return
     const el = mainRef.current?.querySelector<HTMLElement>(scrollTo.selector)
@@ -115,8 +121,12 @@ function LoadedSession({ sid, snapshot, connection }: { sid: string; snapshot: S
     if (typeof el.scrollIntoView === 'function')
       el.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
     highlightJumpTarget(el)
-    return () => clearJumpHighlight(el)
-  }, [scrollTo, cancelRestore])
+    pin(el, () => highlightJumpTarget(el))
+    return () => {
+      cancelRestore()
+      clearJumpHighlight(el)
+    }
+  }, [scrollTo, cancelRestore, pin])
   // Depends on `follow.arm` alone (stable across renders — see useFollowBottom), not on the
   // whole `follow` object, so ctx (and everything downstream of it, including useShortcuts'
   // global keydown listener) doesn't get a new identity just because the "New below ↓" pill

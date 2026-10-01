@@ -137,7 +137,7 @@ describe('titlesOf', () => {
     const f = titlesOf(fixtureSnapshot().state)
     expect(splitIds('See b_2, not b_9 or `b_2`.', f)).toEqual([
       { kind: 'text', text: 'See ' },
-      { kind: 'ref', id: 'b_2', title: 'src/Repo.kt:12-15' },
+      { kind: 'ref', id: 'b_2', title: 'Repo.kt:12-15' },
       { kind: 'text', text: ', not b_9 or `b_2`.' },
     ])
   })
@@ -145,7 +145,7 @@ describe('titlesOf', () => {
   it('titles blocks by what they show', () => {
     const f = titlesOf(fixtureSnapshot().state)
     expect(f('b_1')).toBe('The repository isolates storage from the domain, so the **event log** format can change freely.')
-    expect(f('b_2')).toBe('src/Repo.kt:12-15')
+    expect(f('b_2')).toBe('Repo.kt:12-15')
     expect(f('b_3')).toBe('Pick an approach for the cache')
     expect(f('b_4')).toBe('# Storage')
     expect(f('b_5')).toBe('code (go)')
@@ -154,11 +154,10 @@ describe('titlesOf', () => {
   it('titles blocks per kind and source', () => {
     const base = { id: 'b_1', threadId: 't_1', seq: 1, annotations: [] }
     const block = (b: Partial<Block>): Block => ({ ...base, type: 'note', ...b })
-    expect(blockTitle(block({ type: 'file', path: 'internal/cli/wait.go', firstLine: 18, lineCount: 63 }))).toBe('internal/cli/wait.go:18-80')
-    // A long path shows the file name only.
-    expect(blockTitle(block({ type: 'file', path: 'internal/some/very/deep/package/wait.go', firstLine: 18, lineCount: 63 }))).toBe('wait.go:18-80')
+    // The file name only, without its directory.
+    expect(blockTitle(block({ type: 'file', path: 'internal/cli/wait.go', firstLine: 18, lineCount: 63 }))).toBe('wait.go:18-80')
     expect(blockTitle(block({ type: 'file', path: 'wait.go' }))).toBe('wait.go')
-    expect(blockTitle(block({ type: 'markdown', path: 'docs/plan.md', firstLine: 1, lineCount: 6 }))).toBe('docs/plan.md:1-6')
+    expect(blockTitle(block({ type: 'markdown', path: 'docs/plan.md', firstLine: 1, lineCount: 6 }))).toBe('plan.md:1-6')
     expect(blockTitle(block({ type: 'markdown', text: '\n# Plan\n\nbody' }))).toBe('# Plan')
     expect(blockTitle(block({ type: 'note', text: 'First line\nsecond' }))).toBe('First line')
     expect(blockTitle(block({ type: 'code', lang: 'go', text: 'x := 1' }))).toBe('code (go)')

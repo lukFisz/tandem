@@ -21,6 +21,16 @@ export interface FollowBottom {
    * when it scrolls.
    */
   cancelRestore(): void
+  /**
+   * Keeps `target` centered while the content around it settles: a jump (SessionPage's id chips
+   * and comment jumps) lands before file/markdown blocks above the target have loaded their text,
+   * and their growth would push it off screen. Each time the content resizes the target is
+   * re-centered, and `onMoved` runs when that actually moved the scroll position (the jump
+   * highlight uses it to play again, now that the target is on screen). Ends like a pending
+   * restore: user scroll input, a timeout, another item switch, cancelRestore(), scrollToBottom().
+   * Replaces any earlier pin or pending restore.
+   */
+  pin(target: HTMLElement, onMoved?: () => void): void
 }
 
 // How long a restored position waits for late content (file/markdown blocks load their text
@@ -83,9 +93,13 @@ export function useFollowBottom(
 
   const cancelRestore = useCallback(() => {
     pending.current = null
+    pinned.current = false
     stopPending.current?.()
     stopPending.current = null
   }, [])
+
+  // True while pin() is active: like a pending restore, scroll events are then our own writes.
+  const pinned = useRef(false)
 
   const nearBottom = useCallback(() => {
     const el = containerRef.current
@@ -158,6 +172,46 @@ export function useFollowBottom(
   )
   useEffect(() => cancelRestore, [cancelRestore])
 
+  // Same machinery as startRestore (ResizeObserver on the container's children, user input and a
+  // timeout end it), but it re-centers an element instead of re-applying a scrollTop. Without
+  // ResizeObserver (jsdom) it does nothing.
+  const pin = useCallback(
+    (target: HTMLElement, onMoved?: () => void) => {
+      const el = containerRef.current
+      cancelRestore()
+      if (!el || typeof ResizeObserver !== 'function' || typeof target.scrollIntoView !== 'function') return
+      pinned.current = true
+      const ro = new ResizeObserver(() => {
+        if (!pinned.current) return
+        if (!target.isConnected) {
+          cancelRestore()
+          return
+        }
+        const before = el.scrollTop
+        target.scrollIntoView({ block: 'center', behavior: 'auto' })
+        lastTop.current = el.scrollTop
+        if (Math.abs(el.scrollTop - before) >= 1) onMoved?.()
+      })
+      for (const child of Array.from(el.children)) ro.observe(child)
+      const onUser = () => {
+        const was = pinned.current
+        cancelRestore()
+        if (was) {
+          lastTop.current = el.scrollTop
+          wasNearBottom.current = nearBottom()
+        }
+      }
+      for (const type of USER_SCROLL_EVENTS) el.addEventListener(type, onUser, { passive: true })
+      const timer = setTimeout(onUser, RESTORE_TIMEOUT_MS)
+      stopPending.current = () => {
+        ro.disconnect()
+        clearTimeout(timer)
+        for (const type of USER_SCROLL_EVENTS) el.removeEventListener(type, onUser)
+      }
+    },
+    [containerRef, cancelRestore, nearBottom],
+  )
+
   // Tracks the user's scroll position continuously (and takes an initial reading on mount) so
   // the content-key effect below can consult it without disturbing it. Any manual scroll also
   // disarms: the user is looking around on their own, so a forced follow would be unwelcome.
@@ -170,7 +224,7 @@ export function useFollowBottom(
       // While a restore is pending, scroll events come from the browser's clamping or our own
       // writes, not the user (whose input cancels it first): the pending target stays where the
       // user is, so leaving now saves that instead of the clamped position.
-      if (pending.current) return
+      if (pending.current || pinned.current) return
       wasNearBottom.current = nearBottom()
       lastTop.current = el.scrollTop
       armed.current = false
@@ -248,7 +302,7 @@ export function useFollowBottom(
   // actually changed — a fresh object literal would otherwise defeat that memoization (fix:
   // ctx-stability regression from round 2).
   return useMemo(
-    () => ({ showPill, scrollToBottom, arm, cancelRestore }),
-    [showPill, scrollToBottom, arm, cancelRestore],
+    () => ({ showPill, scrollToBottom, arm, cancelRestore, pin }),
+    [showPill, scrollToBottom, arm, cancelRestore, pin],
   )
 }

@@ -43,7 +43,7 @@ export function questionTitle(text: string): string {
 }
 
 // blockTitle names a block in its b_N chip by what it shows: a file or a document read from a file by
-// path:lines (the file name alone when the path is long), a note or a document from stdin by its first line,
+// name:lines (the file name without its directory), a note or a document from stdin by its first line,
 // code by its language (else its first line), variants by their title. CSS truncates it, as for questions.
 export function blockTitle(b: Block): string {
   const firstLine = (text?: string) => (text ?? '').trim().split('\n', 1)[0].trim()
@@ -51,7 +51,7 @@ export function blockTitle(b: Block): string {
     case 'file':
     case 'markdown': {
       if (!b.path) return firstLine(b.text) || 'Document'
-      const name = b.path.length > 32 ? (b.path.split('/').pop() ?? b.path) : b.path
+      const name = b.path.split('/').pop() || b.path
       if (!b.lineCount) return name
       const first = b.firstLine ?? 1
       return `${name}:${first}-${first + b.lineCount - 1}`
