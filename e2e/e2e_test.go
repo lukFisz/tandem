@@ -188,17 +188,36 @@ func TestFullLoop(t *testing.T) {
 
 func TestSecurity(t *testing.T) {
 	e := newEnv(t)
-	sid := strings.Fields(e.must("", "session", "new", "S"))[0]
+	fields := strings.Fields(e.must("", "session", "new", "S"))
+	sid, url := fields[0], fields[1]
 	info := e.info()
 	base := fmt.Sprintf("http://127.0.0.1:%d", info.Port)
 	noRedirect := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 
-	resp, err := noRedirect.Get(base + "/s/" + sid + "?token=" + info.Token)
-	if err != nil {
-		t.Fatalf("token exchange: %v", err)
+	// The page link carries the page token, never the CLI token, and the page sets no cookie.
+	if info.PageToken == "" || info.PageToken == info.Token || !strings.Contains(url, "?token="+info.PageToken) {
+		t.Fatalf("session URL %q must carry the page token", url)
 	}
-	if resp.StatusCode != http.StatusSeeOther || len(resp.Cookies()) != 1 {
-		t.Fatalf("token exchange: %d %v", resp.StatusCode, resp.Cookies())
+	resp, err := noRedirect.Get(url)
+	if err != nil {
+		t.Fatalf("page: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK || len(resp.Cookies()) != 0 {
+		t.Fatalf("page: %d %v", resp.StatusCode, resp.Cookies())
+	}
+	resp.Body.Close()
+
+	// The page token cannot act as the agent.
+	req, err := http.NewRequest("POST", base+"/api/sessions/"+sid+"/commands", strings.NewReader(`{"type":"say","data":{"text":"hi"}}`))
+	if err != nil {
+		t.Fatalf("build request: %v", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+info.PageToken)
+	if resp, err = http.DefaultClient.Do(req); err != nil {
+		t.Fatalf("page token on commands: %v", err)
+	}
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("page token on commands: %d", resp.StatusCode)
 	}
 	resp.Body.Close()
 
@@ -211,7 +230,7 @@ func TestSecurity(t *testing.T) {
 	}
 	resp.Body.Close()
 
-	req, err := http.NewRequest("POST", base+"/api/sessions/"+sid+"/actions", strings.NewReader(`{"type":"session.end","data":{}}`))
+	req, err = http.NewRequest("POST", base+"/api/sessions/"+sid+"/actions", strings.NewReader(`{"type":"session.end","data":{}}`))
 	if err != nil {
 		t.Fatalf("build request: %v", err)
 	}

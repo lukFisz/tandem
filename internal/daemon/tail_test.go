@@ -5,7 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 
 	"github.com/lukFisz/tandem/internal/domain"
 )
@@ -165,5 +167,27 @@ func TestPollProcessesTailsOutput(t *testing.T) {
 	}
 	if closed(ch) {
 		t.Fatal("a done tail notified subscribers")
+	}
+}
+
+// A FIFO as a process's output file must not block the poller: opening it for reading would
+// wait for a writer forever (security audit #5).
+func TestTailLinesSkipsFIFO(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "fifo")
+	if err := syscall.Mkfifo(path, 0o600); err != nil {
+		t.Skipf("mkfifo: %v", err)
+	}
+	done := make(chan error, 1)
+	go func() {
+		_, err := tailLines(path, 3)
+		done <- err
+	}()
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("want an error for a FIFO")
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("tailLines blocked on a FIFO")
 	}
 }

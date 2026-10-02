@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { withToken } from './auth'
 import { normalizeSnapshot, type Snapshot } from './types'
 
 export type Connection = 'connecting' | 'open' | 'lost'
@@ -8,7 +9,7 @@ export function useSession(sid: string): { snapshot: Snapshot | null; connection
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
   const [connection, setConnection] = useState<Connection>('connecting')
   useEffect(() => {
-    const es = new EventSource(`/api/sessions/${sid}/stream`)
+    const es = new EventSource(withToken(`/api/sessions/${sid}/stream`))
     es.addEventListener('state', (e) => {
       setSnapshot(normalizeSnapshot(JSON.parse((e as MessageEvent<string>).data)))
       setConnection('open')

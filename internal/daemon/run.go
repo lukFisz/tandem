@@ -48,12 +48,15 @@ func Run(ctx context.Context, cfg Config) error {
 		ln.Close()
 		return err
 	}
-	if cfg.Token == "" {
+	for _, tok := range []*string{&cfg.Token, &cfg.PageToken} {
+		if *tok != "" {
+			continue
+		}
 		var b [32]byte
 		if _, err := rand.Read(b[:]); err != nil {
 			return err
 		}
-		cfg.Token = hex.EncodeToString(b[:])
+		*tok = hex.EncodeToString(b[:])
 	}
 	if cfg.IdleTimeout <= 0 {
 		cfg.IdleTimeout = 30 * time.Minute
@@ -67,7 +70,7 @@ func Run(ctx context.Context, cfg Config) error {
 		ReadHeaderTimeout: 10 * time.Second,
 		BaseContext:       func(net.Listener) context.Context { return ctx }, // shutdown ends long polls
 	}
-	if err := store.WriteDaemonInfo(cfg.Home, store.DaemonInfo{Port: cfg.Port, PID: os.Getpid(), Version: cfg.Version, Token: cfg.Token}); err != nil {
+	if err := store.WriteDaemonInfo(cfg.Home, store.DaemonInfo{Port: cfg.Port, PID: os.Getpid(), Version: cfg.Version, Token: cfg.Token, PageToken: cfg.PageToken}); err != nil {
 		ln.Close()
 		return err
 	}

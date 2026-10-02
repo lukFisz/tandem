@@ -70,7 +70,7 @@ func TestAgentSeenOnlyForCLIRequests(t *testing.T) {
 
 func TestCreateSessionFromCLIMarksAgentSeen(t *testing.T) {
 	e := newTestEnv(t)
-	body, _ := json.Marshal(map[string]any{"project": store.Project{ID: "p1", RootPath: "/r", Name: "r"}, "title": "Idea"})
+	body, _ := json.Marshal(map[string]any{"project": apiProject, "title": "Idea"})
 	code, out := e.do("POST", "/api/sessions", string(body), store.ClientHeader, store.ClientCLI)
 	var res struct{ ID string }
 	json.Unmarshal([]byte(out), &res)

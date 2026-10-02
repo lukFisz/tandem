@@ -291,12 +291,20 @@ Your actions on the review page drive an agent that runs commands, so a forged a
 injection. The daemon guards against this:
 
 - It binds to `127.0.0.1` only, on the previous port if it is free and otherwise on a random one.
-- Every daemon start generates a new random token (32 bytes). It is stored in `daemon.json` with mode `0600`.
-- The CLI sends the token as `Authorization: Bearer`. The browser receives it once in the session URL,
-  exchanges it for an `HttpOnly`, `SameSite=Strict` cookie, and is redirected to strip it from the URL.
-  `tdm wait` accepts only the Bearer token.
+- Every daemon start generates two new random tokens (32 bytes each), stored in `daemon.json` with mode `0600`.
+  The **CLI token** is sent by the CLI as `Authorization: Bearer` and may call every endpoint. The **page token**
+  is only accepted on the endpoints the review page uses: it cannot run agent commands, create sessions,
+  start `tdm wait` or stop the daemon.
+- The page link carries the page token, never the CLI token. The page moves it into `localStorage` and strips
+  it from the address bar, then sends it as a Bearer header (and as `?token=` on the live-update stream only,
+  because `EventSource` cannot send headers). Tandem sets no cookies: browsers send cookies to every port on
+  `127.0.0.1`, so a cookie would reach any other local web server you visit.
 - Requests must carry a `Host` of `127.0.0.1:<port>` or `localhost:<port>` (DNS-rebinding defense). Non-GET
-  requests with a mismatched `Origin` are rejected, and so are cookie requests marked `same-site` or `cross-site`.
+  requests with a mismatched `Origin` are rejected, and so are page-token requests marked `same-site` or
+  `cross-site`.
+- The review page is served with a strict Content-Security-Policy: no inline or remote scripts, no remote
+  images (markdown from untrusted content cannot load trackers), and no framing.
+- A session's project id must match its root path, and "open in editor" only opens files inside that root.
 - Tokens are compared in constant time, and request bodies are capped at 8 MiB.
 
 There is no `SECURITY.md` yet. If you find a vulnerability, please report it privately through GitHub's

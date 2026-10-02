@@ -15,8 +15,8 @@ import (
 )
 
 type Client struct {
-	base, token string
-	hc          *http.Client
+	base, token, pageToken string
+	hc                     *http.Client
 }
 
 // APIError is an error reported by the daemon (or a failure to reach it) with a recovery hint.
@@ -30,11 +30,14 @@ type APIError struct {
 func (e *APIError) Error() string { return e.Code + ": " + e.Message }
 
 func New(info store.DaemonInfo) *Client {
-	return &Client{base: fmt.Sprintf("http://127.0.0.1:%d", info.Port), token: info.Token, hc: &http.Client{}}
+	return &Client{base: fmt.Sprintf("http://127.0.0.1:%d", info.Port), token: info.Token, pageToken: info.PageToken, hc: &http.Client{}}
 }
 
 func (c *Client) BaseURL() string { return c.base }
 func (c *Client) Token() string   { return c.token }
+
+// PageToken is the token for links to the review page; the CLI token never goes in a URL.
+func (c *Client) PageToken() string { return c.pageToken }
 
 // Raw sends a request and returns the status and body without interpreting them.
 func (c *Client) Raw(ctx context.Context, method, path string, in any) (int, []byte, error) {

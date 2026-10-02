@@ -13,8 +13,9 @@ import { isAllowedDevProxyRequest } from './src/dev/proxyPolicy'
 function daemonTarget(): { url: string; token: string } | undefined {
   try {
     const home = process.env.TANDEM_HOME ?? join(homedir(), '.tandem')
-    const info = JSON.parse(readFileSync(join(home, 'daemon.json'), 'utf8')) as { port: number; token: string }
-    return { url: `http://127.0.0.1:${info.port}`, token: info.token }
+    const info = JSON.parse(readFileSync(join(home, 'daemon.json'), 'utf8')) as { port: number; pageToken: string }
+    // The page token, not the CLI token: the daemon then also limits the proxy to the page's routes.
+    return { url: `http://127.0.0.1:${info.port}`, token: info.pageToken }
   } catch {
     return undefined
   }

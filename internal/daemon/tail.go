@@ -1,9 +1,11 @@
 package daemon
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strings"
+	"syscall"
 
 	"github.com/lukFisz/tandem/internal/domain"
 )
@@ -19,7 +21,9 @@ const tailOutputLines = 3
 // first line is dropped unless it is all there is. "\r" is stripped so CRLF output reads cleanly.
 // An empty file yields "", nil; a missing one yields "" and an os.IsNotExist error.
 func tailLines(path string, n int) (string, error) {
-	f, err := os.Open(path)
+	// O_NONBLOCK: opening a FIFO for reading would otherwise block until a writer appears,
+	// stalling the process poller for every session. Anything but a regular file is skipped.
+	f, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NONBLOCK, 0)
 	if err != nil {
 		return "", err
 	}
@@ -27,6 +31,9 @@ func tailLines(path string, n int) (string, error) {
 	info, err := f.Stat()
 	if err != nil {
 		return "", err
+	}
+	if !info.Mode().IsRegular() {
+		return "", fmt.Errorf("%s is not a regular file", path)
 	}
 	size := info.Size()
 	if size == 0 || n <= 0 {

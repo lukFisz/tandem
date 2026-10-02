@@ -8,6 +8,7 @@ import (
 	"log"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -51,6 +52,9 @@ func (m *Manager) Close() error {
 func (m *Manager) Create(p store.Project, title string) (*Session, error) {
 	if strings.TrimSpace(title) == "" {
 		return nil, &domain.Error{Code: domain.CodeInvalidInput, Message: "session title is required"}
+	}
+	if !store.ValidProjectID(p.ID) {
+		return nil, &domain.Error{Code: domain.CodeInvalidInput, Message: "invalid project id " + strconv.Quote(p.ID)}
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()

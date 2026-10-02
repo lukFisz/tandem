@@ -148,7 +148,7 @@ func (a *app) openCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			u := c.BaseURL() + "/s/" + sid + "?token=" + c.Token()
+			u := c.BaseURL() + "/s/" + sid + "?token=" + c.PageToken()
 			if err := openBrowser(u); err != nil {
 				return err
 			}

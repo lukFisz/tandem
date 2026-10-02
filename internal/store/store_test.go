@@ -158,3 +158,21 @@ func TestDaemonInfo(t *testing.T) {
 		t.Fatal("file should be removed")
 	}
 }
+
+func TestProjectIDMustBeOneDirectoryName(t *testing.T) {
+	home := t.TempDir()
+	for _, id := range []string{"", ".", "..", "../x", "a/b", `a\b`} {
+		if ValidProjectID(id) {
+			t.Fatalf("ValidProjectID(%q) = true", id)
+		}
+		if err := SaveProject(home, Project{ID: id, RootPath: "/x"}); err == nil {
+			t.Fatalf("SaveProject(%q) succeeded", id)
+		}
+		if p, err := LoadProject(home, id); p != nil || err != nil {
+			t.Fatalf("LoadProject(%q) = %v, %v", id, p, err)
+		}
+	}
+	if p := NewProject("/a/b"); !ValidProjectID(p.ID) || p.Name != "b" || p.RootPath != "/a/b" {
+		t.Fatalf("NewProject = %+v", p)
+	}
+}

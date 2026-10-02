@@ -89,7 +89,7 @@ func TestOpenFile(t *testing.T) {
 		opened.file, opened.line, opened.id = file, line, ed.ID
 		return nil
 	}
-	body, _ := json.Marshal(map[string]any{"project": store.Project{ID: "p1", RootPath: root, Name: "r"}, "title": "Idea"})
+	body, _ := json.Marshal(map[string]any{"project": store.NewProject(root), "title": "Idea"})
 	code, out := e.do("POST", "/api/sessions", string(body))
 	if code != 200 {
 		t.Fatalf("create: %d %s", code, out)

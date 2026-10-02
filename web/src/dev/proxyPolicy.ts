@@ -1,8 +1,9 @@
-// I1: `npm run dev` proxies /api to the running daemon and injects its Bearer
-// token, which otherwise grants full CLI rights to anything that can reach
-// the Vite dev server. This policy is the single gate in front of that
-// proxy: it allows only the exact requests the page itself makes, and only
-// when they are same-origin with the dev server.
+// I1: `npm run dev` proxies /api to the running daemon and injects its page
+// token, which lets anything that can reach the Vite dev server act as the
+// user on the review page. This policy is the gate in front of that proxy: it
+// allows only the exact requests the page itself makes, and only when they are
+// same-origin with the dev server. The daemon enforces the same route list for
+// the page token (pageRoutes in internal/daemon/server.go).
 
 const ALLOWED_ROUTES: { method: string; pattern: RegExp }[] = [
   { method: 'GET', pattern: /^\/api\/sessions$/ },

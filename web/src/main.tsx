@@ -5,6 +5,9 @@ import '@fontsource/jetbrains-mono/400-italic.css'
 import './styles/theme.css'
 import './styles/app.css'
 import { App } from './App'
+import { captureToken } from './api/auth'
+
+captureToken()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

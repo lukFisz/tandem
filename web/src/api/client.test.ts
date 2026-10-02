@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { captureToken } from './auth'
 import { ApiError, fetchBlob, fetchExport, listSessions, postAction } from './client'
 
 function mockFetch(status: number, body: string, contentType = 'application/json') {
@@ -7,7 +8,12 @@ function mockFetch(status: number, body: string, contentType = 'application/json
   return fn
 }
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  localStorage.clear()
+  window.history.replaceState(null, '', '/')
+  captureToken()
+})
 
 describe('client', () => {
   it('posts an action with the draft', async () => {
@@ -22,6 +28,15 @@ describe('client', () => {
       data: { threadId: 't_1' },
       draft: { threads: [{ threadId: 't_2', message: 'hi' }] },
     })
+  })
+
+  it('sends the page token as a Bearer header alongside the request headers', async () => {
+    window.history.replaceState(null, '', '/s/s_1?token=pagetok')
+    captureToken()
+    const fetch = mockFetch(200, '{}')
+    await postAction('s_1', { type: 'session.end', data: {} })
+    const [, init] = fetch.mock.calls[0] as unknown as [string, RequestInit]
+    expect(init.headers).toEqual({ Authorization: 'Bearer pagetok', 'Content-Type': 'application/json' })
   })
 
   it('turns daemon errors into ApiError with the hint', async () => {

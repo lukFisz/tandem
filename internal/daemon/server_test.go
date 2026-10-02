@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net"
@@ -21,6 +22,10 @@ type testEnv struct {
 	home  string
 }
 
+// apiProject is the project test sessions are created in over HTTP; its id is derived from its
+// root, as createSession requires.
+var apiProject = store.NewProject("/r")
+
 func newTestEnv(t *testing.T) *testEnv {
 	t.Helper()
 	home := t.TempDir()
@@ -29,7 +34,7 @@ func newTestEnv(t *testing.T) *testEnv {
 		t.Fatal(err)
 	}
 	mgr := newManager(t, home)
-	cfg := Config{Home: home, Version: "test", Token: "secret", Port: ln.Addr().(*net.TCPAddr).Port, IdleTimeout: time.Hour}
+	cfg := Config{Home: home, Version: "test", Token: "secret", PageToken: "pagesecret", Port: ln.Addr().(*net.TCPAddr).Port, IdleTimeout: time.Hour}
 	srv := NewServer(cfg, mgr, func() {})
 	hs := &httptest.Server{Listener: ln, Config: &http.Server{Handler: srv.Handler()}}
 	hs.Start()
@@ -74,11 +79,11 @@ func (e *testEnv) tryDo(method, path, body string, hdr ...string) (int, string, 
 
 func (e *testEnv) session() string {
 	e.t.Helper()
-	body, _ := json.Marshal(map[string]any{"project": store.Project{ID: "p1", RootPath: "/r", Name: "r"}, "title": "Idea"})
+	body, _ := json.Marshal(map[string]any{"project": apiProject, "title": "Idea"})
 	code, out := e.do("POST", "/api/sessions", string(body))
 	var res struct{ ID, URL string }
 	json.Unmarshal([]byte(out), &res)
-	if code != 200 || !strings.HasPrefix(res.ID, "s_") || !strings.Contains(res.URL, "/s/"+res.ID+"?token=secret") {
+	if code != 200 || !strings.HasPrefix(res.ID, "s_") || !strings.Contains(res.URL, "/s/"+res.ID+"?token=pagesecret") {
 		e.t.Fatalf("create session: %d %s", code, out)
 	}
 	return res.ID
@@ -99,11 +104,11 @@ func TestHealthNeedsNoToken(t *testing.T) {
 func TestGuard(t *testing.T) {
 	e := newTestEnv(t)
 	e.token = ""
-	if code, _ := e.do("GET", "/api/projects/p1", ""); code != 401 {
+	if code, _ := e.do("GET", "/api/projects/"+apiProject.ID, ""); code != 401 {
 		t.Fatalf("missing token: %d", code)
 	}
 	e.token = "secret"
-	if code, out := e.do("GET", "/api/projects/p1", "", "Host", "evil.example:80"); code != 403 || !strings.Contains(out, "bad_host") {
+	if code, out := e.do("GET", "/api/projects/"+apiProject.ID, "", "Host", "evil.example:80"); code != 403 || !strings.Contains(out, "bad_host") {
 		t.Fatalf("bad host: %d %s", code, out)
 	}
 	if code, out := e.do("POST", "/api/shutdown", "", "Origin", "http://evil.example"); code != 403 || !strings.Contains(out, "bad_origin") {
@@ -115,7 +120,7 @@ func TestGuard(t *testing.T) {
 // prefix) must not be accepted as if it were the cookie or a correctly-formed bearer token.
 func TestBearerRequiresPrefix(t *testing.T) {
 	e := newTestEnv(t)
-	req, err := http.NewRequest("GET", e.hs.URL+"/api/projects/p1", nil)
+	req, err := http.NewRequest("GET", e.hs.URL+"/api/projects/"+apiProject.ID, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,94 +135,152 @@ func TestBearerRequiresPrefix(t *testing.T) {
 	}
 }
 
-// Final review finding 1(b): a cookie-authenticated request (no valid Bearer header) must be
-// rejected when Sec-Fetch-Site says the request came from another site — a page on another
-// local port is "same-site" but not the Tandem origin, and its GETs still carry the SameSite=Strict
-// cookie since they share the top-level site. Absent, "same-origin" or "none" must still work
-// (browsers that omit the header, and same-origin navigation/fetch).
-func TestCookieAuthRejectsSameSiteAndCrossSite(t *testing.T) {
+// The page token works only on the routes the page itself calls. A leaked page token must not
+// run agent commands, create sessions, start a wait or stop the daemon (security audit #3).
+func TestPageTokenIsLimitedToPageRoutes(t *testing.T) {
 	e := newTestEnv(t)
 	sid := e.session()
+	e.token = "pagesecret"
+	allowed := []struct{ method, path, body string }{
+		{"GET", "/api/sessions", ""},
+		{"GET", "/api/sessions/" + sid + "/state", ""},
+		{"GET", "/api/sessions/" + sid + "/render/export", ""},
+		{"GET", "/api/settings", ""},
+		{"POST", "/api/sessions/" + sid + "/actions", `{"type":"session.end","data":{}}`},
+	}
+	for _, r := range allowed {
+		if code, out := e.do(r.method, r.path, r.body); code != 200 {
+			t.Fatalf("page token on %s %s: %d %s", r.method, r.path, code, out)
+		}
+	}
+	project, _ := json.Marshal(map[string]any{"project": apiProject, "title": "x"})
+	denied := []struct{ method, path, body string }{
+		{"POST", "/api/sessions/" + sid + "/commands", `{"type":"say","data":{"text":"hi"}}`},
+		{"POST", "/api/sessions", string(project)},
+		{"GET", "/api/sessions/" + sid + "/wait?timeout=100ms", ""},
+		{"GET", "/api/sessions/" + sid + "/events", ""},
+		{"GET", "/api/projects/" + apiProject.ID, ""},
+		{"POST", "/api/projects/" + apiProject.ID + "/active", `{"sessionId":"` + sid + `"}`},
+		{"POST", "/api/shutdown", ""},
+	}
+	for _, r := range denied {
+		if code, out := e.do(r.method, r.path, r.body); code != 403 {
+			t.Fatalf("page token on %s %s: %d %s, want 403", r.method, r.path, code, out)
+		}
+	}
+}
+
+// The CLI token is accepted only as a Bearer header, never as ?token= (it must never go in a URL).
+// The page token is accepted as ?token= on the stream only: EventSource cannot set headers.
+func TestQueryTokenOnlyOnStreamWithPageToken(t *testing.T) {
+	e := newTestEnv(t)
+	sid := e.session()
+	get := func(path string) int {
+		resp, err := http.Get(e.hs.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	if code := get("/api/sessions/" + sid + "/state?token=pagesecret"); code != 401 {
+		t.Fatalf("page token in query on state: %d, want 401", code)
+	}
+	if code := get("/api/sessions/" + sid + "/stream?token=secret"); code != 401 {
+		t.Fatalf("CLI token in query on stream: %d, want 401", code)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx, "GET", e.hs.URL+"/api/sessions/"+sid+"/stream?token=pagesecret", nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != 200 {
+		t.Fatalf("page token in query on stream: %d, want 200", resp.StatusCode)
+	}
+}
+
+// Page-token requests marked same-site or cross-site are rejected: a page on another local port
+// is same-site but is not Tandem. Absent, "same-origin" or "none" still work.
+func TestPageTokenRejectsSameSiteAndCrossSite(t *testing.T) {
+	e := newTestEnv(t)
+	sid := e.session()
+	e.token = "pagesecret"
 	path := "/api/sessions/" + sid + "/state"
 	for _, sfs := range []string{"same-site", "cross-site"} {
-		req, err := http.NewRequest("GET", e.hs.URL+path, nil)
-		if err != nil {
-			t.Fatal(err)
+		if code, _ := e.do("GET", path, "", "Sec-Fetch-Site", sfs); code != http.StatusForbidden {
+			t.Fatalf("Sec-Fetch-Site=%s: %d, want 403", sfs, code)
 		}
-		req.AddCookie(&http.Cookie{Name: "tandem_token", Value: e.token})
-		req.Header.Set("Sec-Fetch-Site", sfs)
+	}
+	for _, sfs := range []string{"same-origin", "none"} {
+		if code, _ := e.do("GET", path, "", "Sec-Fetch-Site", sfs); code != http.StatusOK {
+			t.Fatalf("Sec-Fetch-Site=%q: %d, want 200", sfs, code)
+		}
+	}
+}
+
+// There is no cookie auth any more: cookies are not scoped by port, so one would reach every
+// other web server on 127.0.0.1 (security audit #2).
+func TestCookieIsNotAuth(t *testing.T) {
+	e := newTestEnv(t)
+	sid := e.session()
+	for _, v := range []string{"secret", "pagesecret"} {
+		req, _ := http.NewRequest("GET", e.hs.URL+"/api/sessions/"+sid+"/state", nil)
+		req.AddCookie(&http.Cookie{Name: "tandem_token", Value: v})
 		resp, err := e.hs.Client().Do(req)
 		if err != nil {
 			t.Fatal(err)
 		}
 		resp.Body.Close()
-		if resp.StatusCode != http.StatusForbidden {
-			t.Fatalf("Sec-Fetch-Site=%s: %d, want 403", sfs, resp.StatusCode)
-		}
-	}
-	for _, sfs := range []string{"same-origin", "none", ""} {
-		req, err := http.NewRequest("GET", e.hs.URL+path, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.AddCookie(&http.Cookie{Name: "tandem_token", Value: e.token})
-		if sfs != "" {
-			req.Header.Set("Sec-Fetch-Site", sfs)
-		}
-		resp, err := e.hs.Client().Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			t.Fatalf("Sec-Fetch-Site=%q: %d, want 200", sfs, resp.StatusCode)
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("cookie %s: %d, want 401", v, resp.StatusCode)
 		}
 	}
 }
 
-func TestTokenQuerySetsCookie(t *testing.T) {
+// The page shell is public (it holds no data) and sets no cookie; every response carries the
+// security headers (security audit #6).
+func TestPageIsPublicWithSecurityHeaders(t *testing.T) {
 	e := newTestEnv(t)
-	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	resp, err := client.Get(e.hs.URL + "/s/s_abc123?token=secret")
+	resp, err := http.Get(e.hs.URL + "/s/s_abc123?token=pagesecret")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != "/s/s_abc123" {
-		t.Fatalf("redirect: %d %q", resp.StatusCode, resp.Header.Get("Location"))
+	resp.Body.Close()
+	if resp.StatusCode != 200 || len(resp.Cookies()) != 0 {
+		t.Fatalf("page: %d cookies %v", resp.StatusCode, resp.Cookies())
 	}
-	c := resp.Cookies()
-	if len(c) != 1 || c[0].Name != "tandem_token" || !c[0].HttpOnly || c[0].SameSite != http.SameSiteStrictMode {
-		t.Fatalf("cookie = %+v", c)
+	csp := resp.Header.Get("Content-Security-Policy")
+	for _, want := range []string{"script-src 'self'", "img-src 'self' data:", "font-src 'self' data:", "frame-ancestors 'none'"} {
+		if !strings.Contains(csp, want) {
+			t.Fatalf("CSP %q lacks %q", csp, want)
+		}
 	}
-	req, _ := http.NewRequest("GET", e.hs.URL+"/s/s_abc123", nil)
-	req.AddCookie(c[0])
-	resp, _ = client.Do(req)
-	if resp.StatusCode != 200 {
-		t.Fatalf("page with cookie: %d", resp.StatusCode)
+	if resp.Header.Get("X-Content-Type-Options") != "nosniff" || resp.Header.Get("Referrer-Policy") != "no-referrer" {
+		t.Fatalf("headers: %v", resp.Header)
 	}
 }
 
-// Carried from Task 9 review: the token-exchange redirect must not become an open redirect for
-// a protocol-relative path like //evil.example/x, including the backslash variant browsers
-// normalise to // (review round 1, finding 4).
-func TestTokenQueryRedirectRejectsProtocolRelativePath(t *testing.T) {
+// createSession only accepts a project whose id is derived from its root: otherwise a request
+// could name a root of "/" (open-file then opens any file) or an id like "../x" (writes outside
+// TANDEM_HOME/projects) — security audit #4.
+func TestCreateSessionRejectsMismatchedProject(t *testing.T) {
 	e := newTestEnv(t)
-	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-
-	resp, err := client.Get(e.hs.URL + "//evil.example/x?token=secret&extra=1")
-	if err != nil {
-		t.Fatal(err)
+	for _, p := range []store.Project{
+		{ID: "../../escaped", RootPath: "/", Name: "x"},
+		{ID: apiProject.ID, RootPath: "/", Name: "x"},
+		{ID: store.NewProject("r").ID, RootPath: "r", Name: "r"},
+		{ID: store.NewProject("/r/../etc").ID, RootPath: "/r/../etc", Name: "etc"},
+	} {
+		body, _ := json.Marshal(map[string]any{"project": p, "title": "t"})
+		if code, out := e.do("POST", "/api/sessions", string(body)); code != 400 {
+			t.Fatalf("project %+v: %d %s, want 400", p, code, out)
+		}
 	}
-	if loc := resp.Header.Get("Location"); resp.StatusCode != http.StatusSeeOther || loc != "/evil.example/x?extra=1" {
-		t.Fatalf("redirect: %d %q", resp.StatusCode, loc)
-	}
-
-	resp, err = client.Get(e.hs.URL + "/%5Cevil.example/x?token=secret&extra=1")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if loc := resp.Header.Get("Location"); resp.StatusCode != http.StatusSeeOther || loc != "/evil.example/x?extra=1" {
-		t.Fatalf("backslash redirect: %d %q", resp.StatusCode, loc)
+	if code, _ := e.do("GET", "/api/projects/..%2F..%2Fescaped", ""); code != 404 {
+		t.Fatalf("traversing project id: %d, want 404", code)
 	}
 }
 
@@ -252,7 +315,7 @@ func TestCommandsStateAndErrors(t *testing.T) {
 	if code, _ := e.do("GET", "/api/sessions/s_nope00/state", ""); code != 404 {
 		t.Fatalf("unknown session: %d", code)
 	}
-	code, out = e.do("GET", "/api/projects/p1", "")
+	code, out = e.do("GET", "/api/projects/"+apiProject.ID, "")
 	if code != 200 || !strings.Contains(out, `"activeSessionId":"`+sid+`"`) {
 		t.Fatalf("project: %d %s", code, out)
 	}
@@ -315,8 +378,9 @@ func TestActionWithDraftAndEvents(t *testing.T) {
 
 func TestAllSessionsListsEveryProject(t *testing.T) {
 	e := newTestEnv(t)
-	sid := e.session() // project p1, name "r", title "Idea"
-	code, out := e.do("POST", "/api/sessions", `{"project":{"id":"p2","rootPath":"/q","name":"q"},"title":"Other"}`)
+	sid := e.session() // project "/r", name "r", title "Idea"
+	body, _ := json.Marshal(map[string]any{"project": store.NewProject("/q"), "title": "Other"})
+	code, out := e.do("POST", "/api/sessions", string(body))
 	if code != 200 {
 		t.Fatalf("create: %d %s", code, out)
 	}
@@ -325,8 +389,13 @@ func TestAllSessionsListsEveryProject(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &list); err != nil || code != 200 {
 		t.Fatalf("list: %d %s %v", code, out, err)
 	}
-	if len(list) != 2 || list[0].ID != sid || list[0].ProjectName != "r" || !list[0].Active ||
-		list[1].Title != "Other" || list[1].ProjectName != "q" || !list[1].Active {
+	// Projects are listed in project id order; ids are hashes of the roots.
+	r, q := 0, 1
+	if store.NewProject("/q").ID < apiProject.ID {
+		r, q = 1, 0
+	}
+	if len(list) != 2 || list[r].ID != sid || list[r].ProjectName != "r" || !list[r].Active ||
+		list[q].Title != "Other" || list[q].ProjectName != "q" || !list[q].Active {
 		t.Fatalf("list = %+v", list)
 	}
 }
@@ -349,10 +418,10 @@ func TestRenderAndSessions(t *testing.T) {
 		t.Fatalf("unknown view: %d", code)
 	}
 	sid2 := e.session()
-	if code, _ := e.do("POST", "/api/projects/p1/active", `{"sessionId":"`+sid+`"}`); code != 200 {
+	if code, _ := e.do("POST", "/api/projects/"+apiProject.ID+"/active", `{"sessionId":"`+sid+`"}`); code != 200 {
 		t.Fatal("set active")
 	}
-	_, list := e.do("GET", "/api/projects/p1/sessions", "")
+	_, list := e.do("GET", "/api/projects/"+apiProject.ID+"/sessions", "")
 	var infos []SessionInfo
 	json.Unmarshal([]byte(list), &infos)
 	active := map[string]bool{}

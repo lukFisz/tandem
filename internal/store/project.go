@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,14 +30,31 @@ func ProjectFor(dir string) (Project, error) {
 	if r, err := filepath.EvalSymlinks(root); err == nil {
 		root = r
 	}
+	return NewProject(root), nil
+}
+
+// NewProject is the project rooted at root, an absolute, already-resolved path. Its id is derived
+// from the root, so an id always names the same root.
+func NewProject(root string) Project {
 	sum := sha256.Sum256([]byte(root))
-	return Project{ID: hex.EncodeToString(sum[:])[:12], RootPath: root, Name: filepath.Base(root)}, nil
+	return Project{ID: hex.EncodeToString(sum[:])[:12], RootPath: root, Name: filepath.Base(root)}
+}
+
+// ValidProjectID reports whether id is usable as a single directory name under projects/: a
+// project id never contains a path separator and is never "." or "..", so it cannot point
+// outside TANDEM_HOME/projects.
+func ValidProjectID(id string) bool {
+	return id != "" && id != "." && id != ".." && !strings.ContainsAny(id, `/\`) && !strings.ContainsRune(id, 0)
 }
 
 func projectFile(home, id string) string { return filepath.Join(ProjectDir(home, id), "project.json") }
 
-// LoadProject returns nil, nil when the project has never been saved.
+// LoadProject returns nil, nil when the project has never been saved, or when id is not a valid
+// project id (see ValidProjectID).
 func LoadProject(home, id string) (*Project, error) {
+	if !ValidProjectID(id) {
+		return nil, nil
+	}
 	data, err := os.ReadFile(projectFile(home, id))
 	if os.IsNotExist(err) {
 		return nil, nil
@@ -52,6 +70,9 @@ func LoadProject(home, id string) (*Project, error) {
 }
 
 func SaveProject(home string, p Project) error {
+	if !ValidProjectID(p.ID) {
+		return fmt.Errorf("invalid project id %q", p.ID)
+	}
 	data, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
 		return err

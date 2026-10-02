@@ -21,7 +21,8 @@ var webdist embed.FS
 type Config struct {
 	Home        string
 	Version     string
-	Token       string
+	Token       string // the CLI's token: every route
+	PageToken   string // the review page's token: pageRoutes only
 	Port        int
 	IdleTimeout time.Duration
 }
@@ -80,13 +81,50 @@ func (s *Server) Handler() http.Handler {
 	return s.guard(mux)
 }
 
+// sessionURL is the page link for sid. It carries the page token, never the CLI token: the page
+// reads it once, keeps it in localStorage and strips it from the address bar.
 func (s *Server) sessionURL(sid string) string {
-	return fmt.Sprintf("http://127.0.0.1:%d/s/%s?token=%s", s.cfg.Port, sid, s.cfg.Token)
+	return fmt.Sprintf("http://127.0.0.1:%d/s/%s?token=%s", s.cfg.Port, sid, s.cfg.PageToken)
 }
 
+// pageRoutes are the routes the review page calls, by mux pattern. The page token works on these
+// only, so a leaked page token cannot run agent commands, create sessions, start a wait or stop
+// the daemon. Keep in sync with web/src/dev/proxyPolicy.ts.
+var pageRoutes = map[string]bool{
+	"GET /api/sessions":                     true,
+	"GET /api/sessions/{sid}/state":         true,
+	"GET /api/sessions/{sid}/stream":        true,
+	"GET /api/sessions/{sid}/blobs/{sha}":   true,
+	"GET /api/sessions/{sid}/render/{what}": true,
+	"POST /api/sessions/{sid}/actions":      true,
+	"GET /api/settings":                     true,
+	"PUT /api/settings":                     true,
+	"POST /api/sessions/{sid}/open-file":    true,
+}
+
+// streamPattern is the one route that also takes the page token as ?token=: EventSource cannot
+// send an Authorization header.
+const streamPattern = "GET /api/sessions/{sid}/stream"
+
+// contentSecurityPolicy allows only the embedded UI's own scripts, styles, fonts and API: no
+// inline scripts, no remote images (markdown from untrusted content cannot beacon out), and no
+// framing.
+const contentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+	"img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
+	"form-action 'none'; frame-ancestors 'none'"
+
 // guard enforces Host, Origin and token checks (spec §7 Security).
-func (s *Server) guard(next http.Handler) http.Handler {
+//
+// There are two tokens and no cookie. The CLI sends its token as a Bearer header and may call any
+// route. The page sends the page token as a Bearer header (or ?token= on the stream) and may call
+// pageRoutes only. A cookie would be sent to every port on 127.0.0.1 — cookies are not scoped by
+// port — so any other local web server the browser visits would receive it.
+func (s *Server) guard(mux *http.ServeMux) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("Content-Security-Policy", contentSecurityPolicy)
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("Referrer-Policy", "no-referrer")
 		if !s.allowedHost(r.Host) {
 			writeErr(w, http.StatusForbidden, "bad_host", "unexpected Host header "+r.Host, "")
 			return
@@ -97,71 +135,42 @@ func (s *Server) guard(next http.Handler) http.Handler {
 				return
 			}
 		}
-		if r.URL.Path == "/health" {
+		_, pattern := mux.Handler(r)
+		switch pattern {
+		case "GET /health":
 			// Idle means "no API requests": /health is not an API request.
-			next.ServeHTTP(w, r)
+			mux.ServeHTTP(w, r)
 			return
-		}
-		if tok := r.URL.Query().Get("token"); tok != "" && r.Method == http.MethodGet && !strings.HasPrefix(r.URL.Path, "/api/") {
-			if !s.validToken(tok) {
-				writeErr(w, http.StatusUnauthorized, "unauthorized", "invalid token", "open the page with `tdm open`")
-				return
-			}
-			s.activity.Touch()
-			http.SetCookie(w, &http.Cookie{Name: "tandem_token", Value: tok, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode})
-			q := r.URL.Query()
-			q.Del("token")
-			// Build the redirect target ourselves ("/" + trimmed path + query) instead of
-			// reusing r.URL.RequestURI(): a protocol-relative path like //evil.example/x (or a
-			// backslash variant like /\evil.example/x, which browsers normalise to //) would
-			// otherwise redirect the browser off-host (open redirect). Trim both '/' and '\' so
-			// no combination of leading slashes/backslashes survives.
-			target := "/" + strings.TrimLeft(r.URL.Path, "/\\")
-			if enc := q.Encode(); enc != "" {
-				target += "?" + enc
-			}
-			http.Redirect(w, r, target, http.StatusSeeOther)
+		case "GET /":
+			// The embedded UI holds no data or secrets; it authenticates its own API calls.
+			mux.ServeHTTP(w, r)
 			return
 		}
 		// require the literal "Bearer " prefix: without it, a bare token in the Authorization
 		// header would be treated the same as a correctly-formed bearer token.
-		bearerTok, hasBearer := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-		validBearer := hasBearer && s.validToken(bearerTok)
-
-		cookie := ""
-		if c, err := r.Cookie("tandem_token"); err == nil {
-			cookie = c.Value
+		tok, hasBearer := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+		if !hasBearer && pattern == streamPattern {
+			tok = r.URL.Query().Get("token")
 		}
-		validCookie := s.validToken(cookie)
-
-		// /wait changes state as a side effect of a GET (supersedes the previous waiter, marks
-		// events delivered — see BeginWait/MarkDelivered): unlike every other GET route it must
-		// accept only a Bearer token. SameSite=Strict still sends the cookie on a request from
-		// another page on the same top-level site (e.g. 127.0.0.1:<other-port>), which is not
-		// this app, so the cookie alone must never be enough to start a wait.
-		isWait := strings.HasPrefix(r.URL.Path, "/api/sessions/") && strings.HasSuffix(r.URL.Path, "/wait")
-		if isWait {
-			if !validBearer {
-				writeErr(w, http.StatusUnauthorized, "unauthorized", "the wait endpoint requires a Bearer token", "run `tdm wait`")
+		switch {
+		case hasBearer && s.validToken(tok):
+			// The CLI: every route.
+		case s.validPageToken(tok):
+			if !pageRoutes[pattern] {
+				writeErr(w, http.StatusForbidden, "forbidden", "the page token cannot call "+r.Method+" "+r.URL.Path, "")
 				return
 			}
-		} else if !validBearer {
-			if !validCookie {
-				writeErr(w, http.StatusUnauthorized, "unauthorized", "missing or invalid token", "open the page with `tdm open`")
-				return
-			}
-			// Cookie-authenticated (no Bearer header): a page on another local port is
-			// same-site, so its GETs still carry this SameSite=Strict cookie. Sec-Fetch-Site
-			// tells us the request's actual relationship to this origin; reject anything that
-			// isn't same-origin (absent or "none" means a browser that doesn't send the header,
-			// or a user-typed/bookmarked navigation, both of which are fine).
+			// Defense in depth: the page only ever calls its own origin.
 			if sfs := r.Header.Get("Sec-Fetch-Site"); sfs == "same-site" || sfs == "cross-site" {
 				writeErr(w, http.StatusForbidden, "forbidden", "cross-site request ("+sfs+")", "")
 				return
 			}
+		default:
+			writeErr(w, http.StatusUnauthorized, "unauthorized", "missing or invalid token", "open the page with `tdm open`")
+			return
 		}
 		s.activity.Touch()
-		next.ServeHTTP(w, r)
+		mux.ServeHTTP(w, r)
 	})
 }
 
@@ -177,6 +186,10 @@ func (s *Server) allowedHost(h string) bool {
 
 func (s *Server) validToken(t string) bool {
 	return t != "" && subtle.ConstantTimeCompare([]byte(t), []byte(s.cfg.Token)) == 1
+}
+
+func (s *Server) validPageToken(t string) bool {
+	return t != "" && s.cfg.PageToken != "" && subtle.ConstantTimeCompare([]byte(t), []byte(s.cfg.PageToken)) == 1
 }
 
 // page serves the embedded UI; any non-file path gets index.html (client-side routing).

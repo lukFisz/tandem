@@ -43,24 +43,14 @@ func (e *testEnv) tryUserMessage(sid, text string) error {
 }
 
 // Final review finding 1(a): /wait changes state (marks events delivered, supersedes the
-// previous waiter) as a side effect of a GET, so unlike other GET routes it must accept only a
-// Bearer token — the SameSite=Strict cookie alone (which a same-site page on another local port
-// can still send) must not be enough to start a wait.
-func TestWaitRejectsCookieOnlyAuth(t *testing.T) {
+// previous waiter) as a side effect of a GET, so it accepts only the CLI token: the page token
+// must not be enough to start a wait.
+func TestWaitRejectsPageToken(t *testing.T) {
 	e := newTestEnv(t)
 	sid := e.session()
-	req, err := http.NewRequest("GET", e.hs.URL+"/api/sessions/"+sid+"/wait?timeout=100ms", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req.AddCookie(&http.Cookie{Name: "tandem_token", Value: e.token})
-	resp, err := e.hs.Client().Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("cookie-only wait: %d, want 401", resp.StatusCode)
+	e.token = "pagesecret"
+	if code, _ := e.do("GET", "/api/sessions/"+sid+"/wait?timeout=100ms", ""); code != http.StatusForbidden {
+		t.Fatalf("page-token wait: %d, want 403", code)
 	}
 }
 

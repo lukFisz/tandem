@@ -13,6 +13,8 @@ type DaemonInfo struct {
 	PID     int    `json:"pid"`
 	Version string `json:"version"`
 	Token   string `json:"token"`
+	// PageToken is the review page's token: it is only accepted on the routes the page uses.
+	PageToken string `json:"pageToken"`
 }
 
 // ClientHeader marks requests sent by the tdm CLI, which the agent drives. The daemon uses it to

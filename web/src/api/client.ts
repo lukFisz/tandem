@@ -1,3 +1,4 @@
+import { authHeaders } from './auth'
 import type { Action, SessionSummary, SubmitReview } from './types'
 
 export class ApiError extends Error {
@@ -13,7 +14,11 @@ export class ApiError extends Error {
 }
 
 async function request(path: string, init?: RequestInit): Promise<Response> {
-  const res = await fetch(path, { credentials: 'same-origin', ...init })
+  const res = await fetch(path, {
+    ...init,
+    credentials: 'same-origin',
+    headers: { ...authHeaders(), ...(init?.headers as Record<string, string> | undefined) },
+  })
   if (res.ok) return res
   let body: { code?: string; message?: string; hint?: string } | undefined
   try {

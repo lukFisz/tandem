@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/lukFisz/tandem/internal/domain"
@@ -55,6 +56,14 @@ func (s *Server) createSession(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, domain.CodeInvalidInput, "project is required", "")
 		return
 	}
+	// The project's root decides which files open-file may open, so it must be the root the id
+	// was derived from (store.ProjectFor), never an arbitrary pair from the request body.
+	root := req.Project.RootPath
+	if !filepath.IsAbs(root) || filepath.Clean(root) != root || store.NewProject(root).ID != req.Project.ID {
+		writeErr(w, http.StatusBadRequest, domain.CodeInvalidInput, "project id does not match its root path", "")
+		return
+	}
+	req.Project = store.NewProject(root)
 	sess, err := s.mgr.Create(req.Project, req.Title)
 	if err != nil {
 		writeError(w, err)

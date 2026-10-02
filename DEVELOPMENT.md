@@ -62,13 +62,14 @@ go test ./internal/daemon -run TestSnapshotContractFixture -update
 
 ### Dev server and proxy
 
-`npm run dev` reads `daemon.json` (port and token) from `$TANDEM_HOME`, or from `~/.tandem` when that is unset,
+`npm run dev` reads `daemon.json` (port and page token) from `$TANDEM_HOME`, or from `~/.tandem` when that is unset,
 once at startup. If the daemon restarts, restart `npm run dev` too. A daemon restart always picks a new token.
 It keeps the same port unless that port is no longer free, because the daemon persists its port in
 `daemon.port`, separately from `daemon.json`.
 
-The proxy injects the daemon's Bearer token, so it only forwards the exact requests the page itself makes
-(`web/src/dev/proxyPolicy.ts`):
+The proxy injects the daemon's page token, so it only forwards the exact requests the page itself makes
+(`web/src/dev/proxyPolicy.ts`). The daemon enforces the same list for the page token (`pageRoutes` in
+`internal/daemon/server.go`); keep the two in sync:
 
 | Method | Path |
 |---|---|
