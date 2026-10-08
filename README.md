@@ -302,6 +302,25 @@ injection. The daemon guards against this:
 There is no `SECURITY.md` yet. If you find a vulnerability, please report it privately through GitHub's
 [security advisory form](https://github.com/lukFisz/tandem/security/advisories/new) instead of opening a public issue.
 
+## Terminal-only mode (no install)
+
+If you don't want a binary, a daemon or a browser, [`.claude/output-styles/tandem.md`](.claude/output-styles/tandem.md)
+is a Claude Code output style that runs the same workflow in the terminal: stages and threads with ids, numbered
+file excerpts with annotations, variants with pros and cons, and conclusions and stage summaries you accept with
+one key press (via Claude Code's multiple-choice questions). Progress is kept in a ledger at
+`.claude/tandem/<slug>.md`, so a review survives lost context, and the accepted summaries export to the same
+decision document.
+
+Claude Code picks it up automatically inside this repository. To use it everywhere, copy it to your user
+directory, then choose **Tandem** with `/output-style` (or under `/config` in newer versions):
+
+```bash
+mkdir -p ~/.claude/output-styles && cp .claude/output-styles/tandem.md ~/.claude/output-styles/
+```
+
+What you give up compared with the browser: selecting arbitrary lines with the mouse, batched drafts, live
+process cards, editor deep links and the rendered diff view.
+
 ## Development
 
 ```bash
